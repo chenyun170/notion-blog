@@ -1,0 +1,118 @@
+---
+import "../../styles/linear.css";
+import { getPosts } from "../../lib/notion";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../../consts";
+
+export const prerender = false;
+export const revalidate = 3600;
+
+const allPosts = await getPosts();
+
+// 聚合标签
+const tagMap = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.tags ?? []) {
+    tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...tagMap.entries()]
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .map(([name, count]) => ({ name, count }));
+
+const canonicalURL = new URL("/tags", SITE_URL).toString();
+const pageTitle = `全部标签 | ${SITE_TITLE}`;
+const pageDescription = `外贸情报局全部文章标签索引，共 ${tags.length} 个标签、${allPosts.length} 篇文章。`;
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalURL,
+  inLanguage: "zh-CN",
+  isPartOf: { "@type": "WebSite", name: SITE_TITLE, url: SITE_URL },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead title={pageTitle} description={pageDescription} canonical={canonicalURL} structuredData={collectionSchema} />
+  </head>
+  <body class="ln ln-home">
+    <SiteHeader context="标签" />
+    <main class="ln-wrap">
+      <div class="ln-inner">
+        <section class="ln-section-head" style="margin-bottom:32px;">
+          <h1 class="ln-section-title" style="font-size:28px;letter-spacing:-.04em;">全部标签</h1>
+          <div class="ln-section-meta">共 {tags.length} 个标签 · {allPosts.length} 篇文章</div>
+        </section>
+
+        <div class="ln-tags-grid">
+          {tags.map((tag) => (
+            <a class="ln-tag-card" href={`/tags/${encodeURIComponent(tag.name)}`}>
+              <span class="ln-tag-name">{tag.name}</span>
+              <span class="ln-tag-count">{tag.count}</span>
+            </a>
+          ))}
+        </div>
+
+        <footer class="ln-foot" style="margin-top:48px;">
+          <a class="ln-navlink" href="/">← 返回首页</a>
+          <span class="ln-dot">·</span>
+          <a class="ln-navlink" href="/topics">按专题浏览</a>
+        </footer>
+      </div>
+    </main>
+
+    <style>
+      .ln-tags-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      @media (max-width: 640px) {
+        .ln-tags-grid {
+          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+          gap: 10px;
+        }
+      }
+      .ln-tag-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-radius: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        text-decoration: none;
+        color: var(--text);
+        transition: background .15s, border-color .15s, transform .15s;
+      }
+      .ln-tag-card:hover {
+        background: var(--panel-hover, var(--panel));
+        border-color: var(--accent-dim, rgba(120,120,180,.25));
+        transform: translateY(-1px);
+      }
+      .ln-tag-name {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -.01em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ln-tag-count {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 2px 8px;
+        min-width: 28px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+    </style>
+  </body>
+</html>

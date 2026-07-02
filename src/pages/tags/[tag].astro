@@ -1,0 +1,159 @@
+---
+import "../../styles/linear.css";
+import { getPosts } from "../../lib/notion";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../../consts";
+
+export const prerender = false;
+export const revalidate = 3600; // ISR: 每 1 小时重新验证
+const MIN_INDEXABLE_ARCHIVE_POSTS = 3;
+
+const tagName = decodeURIComponent(Astro.params.tag ?? "").trim();
+if (!tagName) {
+  return new Response("Not Found", { status: 404 });
+}
+
+const allPosts = await getPosts();
+const posts = allPosts
+  .filter((post) => (post.tags ?? []).some((tag) => tag.toLowerCase() === tagName.toLowerCase()))
+  .sort((a, b) => {
+    const ad = a.date ? new Date(a.date).getTime() : -Infinity;
+    const bd = b.date ? new Date(b.date).getTime() : -Infinity;
+    return bd - ad;
+  });
+
+const tagMap = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.tags ?? []) tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+}
+const relatedTags = [...tagMap.entries()]
+  .filter(([name]) => name.toLowerCase() !== tagName.toLowerCase())
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .slice(0, 12)
+  .map(([name, count]) => ({ name, count }));
+
+const canonicalURL = new URL(`/tags/${encodeURIComponent(tagName)}`, SITE_URL).toString();
+const pageTitle = `${tagName} | ${SITE_TITLE}`;
+const pageDescription = `外贸情报局中与「${tagName}」相关的文章归档。${SITE_DESCRIPTION}`;
+const shouldIndex = posts.length >= MIN_INDEXABLE_ARCHIVE_POSTS;
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalURL,
+  inLanguage: "zh-CN",
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: posts.length,
+    itemListElement: posts.slice(0, 20).map((post, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: new URL(`/posts/${post.slug}`, SITE_URL).toString(),
+      name: post.title,
+      description: post.summary || post.title,
+    })),
+  },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={pageDescription}
+      canonical={canonicalURL}
+      robots={shouldIndex ? "index, follow" : "noindex, follow"}
+      structuredData={collectionSchema}
+    />
+  </head>
+  <body class="ln ln-home">
+    <SiteHeader context="标签" />
+
+    <main class="ln-wrap">
+      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+        <div class="ln-kicker">标签 · {posts.length} 篇文章</div>
+        <h1 class="ln-h1">{tagName}</h1>
+        <p class="ln-sub">这里整理所有带有「{tagName}」标签的文章，便于按主题连续阅读和检索。</p>
+      </section>
+
+      <section class="ln-glass ln-reveal" aria-label="标签文章">
+        <div class="ln-glass-head">
+          <div>
+            <div class="ln-glass-title">相关文章</div>
+            <div class="ln-glass-meta">共 {posts.length} 篇</div>
+          </div>
+          <a class="ln-chip" href="/">返回首页</a>
+        </div>
+
+        {posts.length ? (
+          <div class="ln-card-grid">
+            {posts.map((post) => (
+              <a class="ln-card" href={`/posts/${post.slug}`}>
+                <span class="ln-card-media">
+                  {post.cover ? (
+                    <img src={post.cover} alt={post.title} width="360" height="220" loading="lazy" decoding="async" />
+                  ) : (
+                    <span class="ln-card-fallback" aria-hidden="true">阅读</span>
+                  )}
+                  <span class="ln-card-overlay" aria-hidden="true"></span>
+                  <span class="ln-card-badges">
+                    <span class="ln-card-badge">{post.date || "最新"}</span>
+                    {(post.tags?.length ?? 0) > 0 ? <span class="ln-card-badge">{post.tags.slice(0, 1)[0]}</span> : null}
+                  </span>
+                </span>
+                <span class="ln-card-body">
+                  <span class="ln-card-title">{post.title}</span>
+                  <span class="ln-card-summary">{post.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div class="ln-empty">
+            <div class="ln-empty-title">暂无文章</div>
+            <div class="ln-empty-sub">这个标签暂时没有匹配文章。</div>
+          </div>
+        )}
+      </section>
+
+      {relatedTags.length ? (
+        <section class="ln-section ln-reveal" aria-label="相关标签">
+          <div class="ln-section-head">
+            <h2 class="ln-section-title">更多标签</h2>
+            <div class="ln-section-meta">继续浏览归档</div>
+          </div>
+          <div class="ln-tag-link-grid">
+            {relatedTags.map((tag) => (
+              <a class="ln-tag-link" href={`/tags/${encodeURIComponent(tag.name)}`}>
+                <span>{tag.name}</span>
+                <small>{tag.count}</small>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <footer class="ln-foot ln-reveal">
+        <span>© {new Date().getFullYear()} {SITE_TITLE}</span>
+        <span class="ln-dot">·</span>
+        <a class="ln-navlink" href="/">返回首页</a>
+      </footer>
+    </main>
+
+    <script is:inline>
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>

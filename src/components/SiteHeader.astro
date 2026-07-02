@@ -1,0 +1,32 @@
+---
+import { SITE_TITLE } from "../consts";
+
+export interface Props {
+  active?: "home" | "about" | "oraagent";
+  context?: string;
+}
+
+const { active = "", context = "" } = Astro.props;
+---
+
+<header class="ln-top">
+  <div class="ln-top-inner">
+    <a class="ln-brand" href="/">{SITE_TITLE}</a>
+    <nav class="ln-mid">
+      {active === "home" ? <span class="ln-muted">文章</span> : <a class="ln-navlink" href="/">文章</a>}
+      <span class="ln-dot">·</span>
+      {active === "about" ? <span class="ln-muted">关于</span> : <a class="ln-navlink" href="/about">关于</a>}
+      <span class="ln-dot">·</span>
+      {active === "oraagent" ? <span class="ln-muted">OraAgent</span> : <a class="ln-navlink" href="/oraagent">OraAgent</a>}
+      {context ? (
+        <>
+          <span class="ln-dot">·</span>
+          <span class="ln-muted">{context}</span>
+        </>
+      ) : null}
+    </nav>
+    <div class="ln-right ln-actions">
+      <button class="ln-btn" id="themeToggle" type="button" aria-label="切换主题">☀️</button>
+    </div>
+  </div>
+</header>

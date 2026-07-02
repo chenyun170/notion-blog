@@ -1,0 +1,65 @@
+---
+import ThemeScript from "./ThemeScript.astro";
+import { SITE_OG_IMAGE, SITE_TITLE, SITE_URL } from "../consts";
+
+export interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  type?: "website" | "article";
+  image?: string;
+  robots?: string;
+  structuredData?: unknown;
+  articleTags?: string[];
+  publishedTime?: string;
+  modifiedTime?: string;
+  includeRss?: boolean;
+  twitterUrl?: string;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  type = "website",
+  image = SITE_OG_IMAGE,
+  robots = "index, follow",
+  structuredData,
+  articleTags = [],
+  publishedTime = "",
+  modifiedTime = "",
+  includeRss = true,
+  twitterUrl = canonical,
+} = Astro.props;
+---
+
+<meta charset="utf-8" />
+<ThemeScript />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content={robots} />
+<meta name="author" content={SITE_TITLE} />
+<link rel="canonical" href={canonical} />
+{includeRss ? <link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href={new URL("/rss.xml", SITE_URL).toString()} /> : null}
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#08090d" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={image} />
+<meta property="og:site_name" content={SITE_TITLE} />
+<meta property="og:locale" content="zh_CN" />
+{publishedTime ? <meta property="article:published_time" content={publishedTime} /> : null}
+{modifiedTime ? <meta property="article:modified_time" content={modifiedTime} /> : null}
+{articleTags.map((tag) => <meta property="article:tag" content={tag} />)}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={twitterUrl} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+{structuredData ? <script type="application/ld+json" set:html={JSON.stringify(structuredData)} /> : null}

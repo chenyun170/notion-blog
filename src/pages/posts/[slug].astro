@@ -1,0 +1,797 @@
+---
+import "../../styles/linear.css";
+import { getPostBySlug, getPosts } from "../../lib/notion";
+import { SITE_TITLE, SITE_URL, NEWSLETTER_ACTION } from "../../consts";
+import NewsletterSubscribe from "../../components/NewsletterSubscribe.astro";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import RelatedTools from "../../components/RelatedTools.astro";
+
+export const prerender = false;
+export const revalidate = 3600; // ISR: 每 1 小时重新验证
+
+const { slug } = Astro.params;
+const data = await getPostBySlug(slug!);
+
+if (!data) {
+  return new Response("Not Found", { status: 404 });
+}
+
+const { post, html, toc } = data;
+const allPosts = await getPosts();
+const currentIndex = allPosts.findIndex((item) => item.slug === post.slug);
+const prev = currentIndex >= 0 && currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+const next = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+const currentTags = new Set((post.tags ?? []).map((tag) => tag.toLowerCase()));
+const now = Date.now();
+const relatedCandidates = allPosts
+  .filter((item) => item.slug !== post.slug)
+  .map((item) => {
+    const sharedTags = (item.tags ?? []).filter((tag) => currentTags.has(tag.toLowerCase())).length;
+    // Time decay: articles within 30 days get up to +0.5 boost, decaying over 365 days
+    const ageMs = item.date ? now - new Date(item.date).getTime() : 365 * 86400000;
+    const decayBoost = Math.max(0, 0.5 * (1 - ageMs / (365 * 86400000)));
+    return { item, score: sharedTags + decayBoost };
+  })
+  .sort((a, b) => b.score - a.score || (b.item.date || "").localeCompare(a.item.date || ""));
+const related = relatedCandidates
+  .filter(({ item }) => (item.tags ?? []).some((tag) => currentTags.has(tag.toLowerCase())))
+  .map(({ item }) => item)
+  .slice(0, 3);
+const fallbackRelated = related.length ? related : allPosts.filter((item) => item.slug !== post.slug).slice(0, 3);
+const canonicalURL = new URL(`/posts/${post.slug}`, SITE_URL).toString();
+const pageDescription = post.summary || `来自 ${SITE_TITLE} 的文章`;
+const pageImage = new URL(`/og/${encodeURIComponent(post.slug)}.png`, SITE_URL).toString();
+const primaryTag = post.tags?.[0] ?? "";
+const readingMinutes = estimatedReadingTime(html);
+const organizationId = new URL("/#organization", SITE_URL).toString();
+const websiteId = new URL("/#website", SITE_URL).toString();
+
+function trimPoint(value: string, max = 110) {
+  const clean = value.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max).replace(/[，、；：;:][^，、；：;:]*$/, "").trim()}...`;
+}
+
+function estimatedReadingTime(htmlStr: string): number {
+  const text = htmlStr.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
+  const chineseChars = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+  const otherChars = text.length - chineseChars;
+  // Chinese: ~400 chars/min; English: ~200 words/min, ~5 chars/word
+  const minutes = Math.round(chineseChars / 400 + otherChars / (200 * 5));
+  return Math.max(1, Math.min(minutes, 45));
+}
+
+function getTagAction(tag: string) {
+  if (/汇率|结汇|人民币|美元/.test(tag)) return "关注汇率波动对报价、结汇和利润空间的影响，提前准备价格调整或锁汇方案。";
+  if (/关税|政策|合规/.test(tag)) return "关注政策变化对成本、合规和订单节奏的影响，及时同步客户与供应链。";
+  if (/物流|跨境/.test(tag)) return "关注物流时效、运费和履约风险，提前调整发货计划和交付承诺。";
+  if (/数据|海关|市场|进出口/.test(tag)) return "结合数据变化判断市场需求、买家动向和客户开发优先级。";
+  return "把文章中的变化转化为报价、客户沟通和订单跟进动作。";
+}
+
+function uniquePoints(points: string[]) {
+  const seen = new Set<string>();
+  return points
+    .map((point) => trimPoint(point))
+    .filter((point) => {
+      const key = point.toLowerCase();
+      if (!point || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+const keyPoints = uniquePoints([
+  post.summary,
+  primaryTag ? getTagAction(primaryTag) : "",
+  toc?.length ? `正文重点包括：${toc.slice(0, 2).map((item) => item.text).join("、")}。` : "",
+  "建议结合自身订单、客户沟通和交付节奏，及时调整报价与跟进策略。",
+]).slice(0, 3);
+
+const faqs = [
+  {
+    question: `这篇文章主要讲什么？`,
+    answer: trimPoint(post.summary || `这篇文章围绕「${post.title}」展开，整理外贸人需要关注的信息和应对思路。`, 180),
+  },
+  {
+    question: `外贸人需要重点关注什么？`,
+    answer: primaryTag ? getTagAction(primaryTag) : "重点关注变化背后的客户需求、报价影响、交付风险和后续跟进动作。",
+  },
+  {
+    question: `读完后可以先做什么？`,
+    answer: keyPoints.length
+      ? `建议：${keyPoints[0]}。同时结合自身订单和客户沟通节奏，确认是否需要调整报价或跟进策略。`
+      : "建议先结合自己的订单、客户沟通、报价表和交付计划，确认是否需要调整价格、付款节奏或客户跟进话术。",
+  },
+];
+
+// JSON-LD: Article + breadcrumb structured data for SEO/GEO
+const breadcrumbItems = [
+  {
+    "@type": "ListItem",
+    "position": 1,
+    "name": "首页",
+    "item": SITE_URL,
+  },
+  ...(primaryTag
+    ? [{
+        "@type": "ListItem",
+        "position": 2,
+        "name": primaryTag,
+        "item": new URL(`/tags/${encodeURIComponent(primaryTag)}`, SITE_URL).toString(),
+      }]
+    : []),
+  {
+    "@type": "ListItem",
+    "position": primaryTag ? 3 : 2,
+    "name": post.title,
+    "item": canonicalURL,
+  },
+];
+
+const articleSchema = {
+  "@type": "BlogPosting",
+  "@id": `${canonicalURL}#article`,
+  "headline": post.title,
+  "description": pageDescription,
+  "url": canonicalURL,
+  "mainEntityOfPage": { "@type": "WebPage", "@id": canonicalURL },
+  "image": {
+    "@type": "ImageObject",
+    "url": pageImage,
+    "width": 1200,
+    "height": 630,
+  },
+  "thumbnailUrl": pageImage,
+  "abstract": keyPoints.join(" "),
+  ...(post.date ? { "datePublished": post.date, "dateModified": post.date } : {}),
+  "inLanguage": "zh-CN",
+  "articleSection": primaryTag || undefined,
+  "keywords": (post.tags ?? []).join(", "),
+  "author": { "@id": organizationId },
+  "publisher": { "@id": organizationId },
+  "isPartOf": { "@id": websiteId },
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "cssSelector": [".ln-post-title", ".ln-post-summary"],
+  },
+};
+
+const faqSchema = {
+  "@type": "FAQPage",
+  "@id": `${canonicalURL}#faq`,
+  "mainEntity": faqs.map((faq) => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer,
+    },
+  })),
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": organizationId,
+      "name": SITE_TITLE,
+      "url": SITE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": new URL("/favicon.ico", SITE_URL).toString(),
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": websiteId,
+      "name": SITE_TITLE,
+      "url": SITE_URL,
+      "inLanguage": "zh-CN",
+      "publisher": { "@id": organizationId },
+    },
+    articleSchema,
+    faqSchema,
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${canonicalURL}#breadcrumb`,
+      "itemListElement": breadcrumbItems,
+    },
+  ],
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={`${post.title} | ${SITE_TITLE}`}
+      description={pageDescription}
+      canonical={canonicalURL}
+      type="article"
+      image={pageImage}
+      structuredData={structuredData}
+      articleTags={post.tags ?? []}
+      publishedTime={post.date}
+      modifiedTime={post.date}
+    />
+    <style>
+      /* 封面图更克制（不改你 linear.css 也能生效）*/
+      .ln-cover {
+        max-height: 360px;
+        overflow: hidden;
+      }
+      .ln-cover img {
+        width: 100%;
+        height: 360px;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Lightbox（不依赖 linear.css；有则覆盖更完整）*/
+      .ln-lightbox{
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,.82);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .18s ease;
+      }
+      .ln-lightbox.open{
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .ln-lightbox-inner{
+        position: relative;
+        max-width: 92vw;
+        max-height: 86vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .ln-lightbox-img{
+        max-width: 92vw;
+        max-height: 86vh;
+        border-radius: 16px;
+        box-shadow: 0 40px 120px rgba(0,0,0,.6);
+        transform: scale(.98);
+        transition: transform .2s ease;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .ln-lightbox.open .ln-lightbox-img{
+        transform: scale(1);
+      }
+      .ln-lightbox-close{
+        position: absolute;
+        top: -52px;
+        right: 0;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        cursor: pointer;
+        color: rgba(255,255,255,.86);
+        border: 1px solid rgba(255,255,255,.16);
+        background: rgba(255,255,255,.06);
+        backdrop-filter: blur(10px);
+        font-size: 18px;
+      }
+      .ln-lightbox-close:hover{
+        background: rgba(255,255,255,.10);
+        border-color: rgba(255,255,255,.22);
+        color: rgba(255,255,255,.95);
+      }
+
+      .ln-lightbox-nav{
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        cursor: pointer;
+        color: rgba(255,255,255,.86);
+        border: 1px solid rgba(255,255,255,.16);
+        background: rgba(255,255,255,.06);
+        backdrop-filter: blur(10px);
+        user-select:none;
+      }
+      .ln-lightbox-nav:hover{
+        background: rgba(255,255,255,.10);
+        border-color: rgba(255,255,255,.22);
+        color: rgba(255,255,255,.95);
+      }
+      .ln-lightbox-prev{ left: -64px; }
+      .ln-lightbox-next{ right: -64px; }
+
+      @media (max-width: 820px){
+        .ln-lightbox-prev{ left: 10px; }
+        .ln-lightbox-next{ right: 10px; }
+        .ln-lightbox-close{ top: 14px; right: 14px; }
+      }
+
+      .ln-lightbox-meta{
+        position:absolute;
+        left: 0;
+        right: 0;
+        bottom: -46px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap: 10px;
+        color: rgba(255,255,255,.72);
+        font-size: 12px;
+        letter-spacing: .02em;
+      }
+      .ln-lightbox-dot{
+        opacity:.45;
+      }
+
+      /* 让文章里的图片更像 Notion / Linear：有边框、有圆角、可点击 */
+      .ln-prose .n-figure{
+        border-radius: 14px;
+        overflow:hidden;
+      }
+      .ln-prose .n-figure img{
+        cursor: zoom-in;
+      }
+
+      /* 防止打开 lightbox 时页面滚动 */
+      body.lb-lock{
+        overflow: hidden;
+      }
+    </style>
+  </head>
+
+  <body class="ln ln-article">
+    <!-- progress -->
+    <div class="ln-progress">
+      <div class="ln-progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- top -->
+    <SiteHeader context="正文" />
+
+    <main class="ln-wrap">
+      <article class="ln-post">
+        <header class="ln-post-head">
+          <nav class="ln-breadcrumb" aria-label="Breadcrumb">
+            <a href="/">首页</a>
+            {primaryTag ? (
+              <>
+                <span class="ln-dot">·</span>
+                <a href={`/tags/${encodeURIComponent(primaryTag)}`}>{primaryTag}</a>
+              </>
+            ) : null}
+            <span class="ln-dot">·</span>
+            <span aria-current="page">{post.title}</span>
+          </nav>
+
+          <div class="ln-post-meta">
+            <span class="ln-muted">{post.date || ""}</span>
+            <span class="ln-dot">·</span>
+            <span class="ln-muted">约 {readingMinutes} 分钟阅读</span>
+            {post.tags?.length ? <span class="ln-dot">·</span> : null}
+            {post.tags?.length ? <span class="ln-muted">{post.tags.join(" · ")}</span> : null}
+          </div>
+
+          <div class="ln-share" id="shareArea">
+            <span class="ln-share-label">分享：</span>
+            <button class="ln-share-btn" id="shareCopy" type="button" title="复制链接">🔗 复制链接</button>
+            <a class="ln-share-btn" href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(canonicalURL)}`} title="邮件分享">📧 邮件</a>
+            <button class="ln-share-btn" id="shareWechat" type="button" title="微信分享">💬 微信</button>
+          </div>
+
+          <h1 class="ln-post-title">{post.title}</h1>
+
+          {post.summary ? <p class="ln-post-summary">{post.summary}</p> : null}
+
+          {post.cover ? (
+            <div class="ln-cover">
+              <img src={post.cover} alt={post.title} width="1200" height="630" loading="eager" decoding="async" fetchpriority="high" />
+            </div>
+          ) : null}
+        </header>
+
+        <div class="ln-post-grid">
+          <!-- content -->
+          <div class="ln-content">
+            {keyPoints.length ? (
+              <section class="ln-keypoints" aria-labelledby="keypoints-title">
+                <div class="ln-keypoints-label" id="keypoints-title">本文要点</div>
+                <ul>
+                  {keyPoints.map((point) => <li>{point}</li>)}
+                </ul>
+              </section>
+            ) : null}
+            <div class="ln-prose" id="prose" set:html={html}></div>
+            <section class="ln-faq" aria-labelledby="faq-title">
+              <div class="ln-faq-title" id="faq-title">常见问题</div>
+              <div class="ln-faq-list">
+                {faqs.map((faq) => (
+                  <div class="ln-faq-item">
+                    <h3>{faq.question}</h3>
+                    <p>{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <RelatedTools tags={post.tags ?? []} title={post.title} summary={post.summary} />
+          </div>
+
+          <!-- toc -->
+          <aside class="ln-toc">
+            <div class="ln-toc-title">目录</div>
+            <nav class="ln-toc-nav">
+              {toc?.length ? (
+                <ul id="tocList">
+                  {toc.map((t) => (
+                    <li class={`ln-toc-item depth-${t.depth}`}>
+                      <a href={`#${t.id}`}>{t.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div class="ln-muted" style="font-size:12px;">-</div>
+              )}
+            </nav>
+          </aside>
+
+          <!-- Mobile TOC drawer -->
+          <button class="ln-toc-toggle" id="tocToggle" type="button" aria-label="目录" title="目录">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h12M3 10h8M3 15h12"/></svg>
+          </button>
+          <div class="ln-toc-drawer" id="tocDrawer">
+            <div class="ln-toc-overlay" id="tocOverlay"></div>
+            <div class="ln-toc-panel">
+              <div class="ln-toc-title">
+                <span>目录</span>
+                <button class="ln-toc-close" id="tocClose" type="button" aria-label="关闭">✕</button>
+              </div>
+              <nav class="ln-toc-nav">
+                {toc?.length ? (
+                  <ul id="tocListMobile">
+                    {toc.map((t) => (
+                      <li class={`ln-toc-item depth-${t.depth}`}>
+                        <a href={`#${t.id}`} class="toc-mobile-link">{t.text}</a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div class="ln-muted" style="font-size:12px;">无目录</div>
+                )}
+              </nav>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      {fallbackRelated.length ? (
+        <section class="ln-related-posts">
+          <div class="ln-section-head">
+            <h2 class="ln-section-title">相关阅读</h2>
+            <div class="ln-section-meta">同主题继续读</div>
+          </div>
+          <div class="ln-related-grid">
+            {fallbackRelated.map((item) => (
+              <a class="ln-related-card" href={`/posts/${item.slug}`}>
+                {item.cover ? <img src={item.cover} alt={item.title} width="360" height="220" loading="lazy" decoding="async" /> : null}
+                <span class="ln-related-card-body">
+                  <span class="ln-related-card-meta">{item.date || ""}</span>
+                  <span class="ln-related-card-title">{item.title}</span>
+                  {item.summary ? <span class="ln-related-card-desc">{item.summary}</span> : null}
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <!-- 上下篇导航 -->
+      {prev || next ? (
+        <nav class="ln-post-nav">
+          {prev ? (
+            <a class="ln-post-nav-card" href={`/posts/${prev.slug}`}>
+              <span class="ln-post-nav-label">← 上一篇</span>
+              <span class="ln-post-nav-title">{prev.title}</span>
+              {prev.summary ? <span class="ln-post-nav-desc">{prev.summary}</span> : null}
+              {prev.date ? <span class="ln-post-nav-date">{prev.date}</span> : null}
+            </a>
+          ) : (
+            <div class="ln-post-nav-card ln-post-nav-empty"></div>
+          )}
+          {next ? (
+            <a class="ln-post-nav-card ln-post-nav-next" href={`/posts/${next.slug}`}>
+              <span class="ln-post-nav-label">下一篇 →</span>
+              <span class="ln-post-nav-title">{next.title}</span>
+              {next.summary ? <span class="ln-post-nav-desc">{next.summary}</span> : null}
+              {next.date ? <span class="ln-post-nav-date">{next.date}</span> : null}
+            </a>
+          ) : (
+            <div class="ln-post-nav-card ln-post-nav-empty"></div>
+          )}
+        </nav>
+      ) : null}
+
+      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+
+      <footer class="ln-foot">
+        <a class="ln-navlink" href="/">← 返回首页</a>
+        <span class="ln-dot">·</span>
+        <span class="ln-muted">内容持续更新</span>
+      </footer>
+    </main>
+
+      <!-- ↑ Scroll to top (with percent) -->
+<button
+  class="ln-topbtn"
+  id="toTop"
+  type="button"
+  aria-label="回到顶部"
+  title="回到顶部"
+>
+  <span class="ln-topbtn-num" id="toTopNum">0</span>
+  <span class="ln-topbtn-sym">%</span>
+</button>
+
+
+    <!-- Lightbox -->
+    <div class="ln-lightbox" id="lightbox" aria-hidden="true">
+      <div class="ln-lightbox-inner" role="dialog" aria-modal="true">
+        <button class="ln-lightbox-close" id="lbClose" type="button" aria-label="关闭">✕</button>
+        <button class="ln-lightbox-nav ln-lightbox-prev" id="lbPrev" type="button" aria-label="上一张">←</button>
+        <img class="ln-lightbox-img" id="lbImg" src="" alt="" />
+        <button class="ln-lightbox-nav ln-lightbox-next" id="lbNext" type="button" aria-label="下一张">→</button>
+
+        <div class="ln-lightbox-meta" id="lbMeta">
+          <span id="lbIndex">1</span>
+          <span class="ln-lightbox-dot">·</span>
+          <span id="lbTotal">1</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== Theme =====
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      if (saved === "dark") root.classList.add("dark");
+      if (saved === "light") root.classList.remove("dark");
+
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+
+      // ===== Progress =====
+      const bar = document.getElementById("progressBar");
+      const calc = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        const v = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+        if (bar) bar.style.width = v.toFixed(2) + "%";
+      };
+      calc();
+      window.addEventListener("scroll", calc, { passive: true });
+
+      // ===== TOC Active (IntersectionObserver, 更稳) =====
+      const tocLinks = Array.from(document.querySelectorAll(".ln-toc a"));
+      const headings = tocLinks
+        .map((a) => document.getElementById(a.getAttribute("href")?.slice(1) || ""))
+        .filter(Boolean);
+
+      const setActive = (id) => {
+        tocLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
+      };
+
+      if ("IntersectionObserver" in window && headings.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            const visible = entries.filter((e) => e.isIntersecting);
+            if (!visible.length) return;
+            // 取最靠上的那个?
+            visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            setActive(visible[0].target.id);
+          },
+          { rootMargin: "-120px 0px -70% 0px", threshold: [0, 1] }
+        );
+        headings.forEach((h) => io.observe(h));
+      } else {
+        const onScroll = () => {
+          let active = -1;
+          for (let i = 0; i < headings.length; i++) {
+            const el = headings[i];
+            const top = el.getBoundingClientRect().top;
+            if (top <= 120) active = i;
+          }
+          const id = headings[active]?.id;
+          if (id) setActive(id);
+        };
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+      }
+
+      // scroll to top button + percent
+  const topBtn = document.getElementById("toTop");
+  const num = document.getElementById("toTopNum");
+
+  const updateTopBtn = () => {
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+
+    const y = window.scrollY || doc.scrollTop || 0;
+    const pct = max <= 0 ? 0 : Math.round((y / max) * 100);
+
+    if (num) num.textContent = String(pct);
+
+    if (topBtn) topBtn.classList.toggle("show", y > 520);
+  };
+
+  updateTopBtn();
+  window.addEventListener("scroll", updateTopBtn, { passive: true });
+
+  topBtn?.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+      // ESC hides focus (optional)
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") (topBtn instanceof HTMLElement) && topBtn.blur();
+      });
+
+      // ===== Ultra Lightbox (images in article) =====
+      const prose = document.getElementById("prose");
+      const lightbox = document.getElementById("lightbox");
+      const lbImg = document.getElementById("lbImg");
+      const lbClose = document.getElementById("lbClose");
+      const lbPrev = document.getElementById("lbPrev");
+      const lbNext = document.getElementById("lbNext");
+      const lbIndex = document.getElementById("lbIndex");
+      const lbTotal = document.getElementById("lbTotal");
+
+      let imgs = [];
+      let current = 0;
+
+      const lockBody = (on) => {
+        document.body.classList.toggle("lb-lock", on);
+      };
+
+      const openLB = (idx) => {
+        if (!lightbox || !lbImg) return;
+        current = idx;
+        const src = imgs[current]?.src;
+        if (!src) return;
+
+        lbImg.src = src;
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
+        lockBody(true);
+
+        if (lbIndex) lbIndex.textContent = String(current + 1);
+        if (lbTotal) lbTotal.textContent = String(imgs.length);
+
+        // nav show/hide（只有一张图时隐藏）
+        if (lbPrev) lbPrev.style.display = imgs.length > 1 ? "flex" : "none";
+        if (lbNext) lbNext.style.display = imgs.length > 1 ? "flex" : "none";
+      };
+
+      const closeLB = () => {
+        if (!lightbox || !lbImg) return;
+        lightbox.classList.remove("open");
+        lightbox.setAttribute("aria-hidden", "true");
+        lockBody(false);
+        // 清空，避免大图常驻占内存
+        lbImg.src = "";
+      };
+
+      const show = (idx) => {
+        if (!lbImg) return;
+        current = (idx + imgs.length) % imgs.length;
+        lbImg.src = imgs[current].src;
+        if (lbIndex) lbIndex.textContent = String(current + 1);
+      };
+
+      // 收集文章内图片（Notion image block -> .n-figure img）?
+      const collect = () => {
+        imgs = Array.from(document.querySelectorAll(".ln-prose .n-figure img"));
+        imgs.forEach((img, idx) => {
+          img.addEventListener("click", (e) => {
+            e.preventDefault();
+            openLB(idx);
+          });
+        });
+      };
+      collect();
+
+      // 点击遮罩关闭（点图片不关闭）
+      lightbox?.addEventListener("click", () => closeLB());
+      lbImg?.addEventListener("click", (e) => e.stopPropagation());
+      lbClose?.addEventListener("click", (e) => { e.stopPropagation(); closeLB(); });
+
+      // 左右切换
+      lbPrev?.addEventListener("click", (e) => { e.stopPropagation(); show(current - 1); });
+      lbNext?.addEventListener("click", (e) => { e.stopPropagation(); show(current + 1); });
+
+      // 键盘：ESC/左右箭头?
+      window.addEventListener("keydown", (e) => {
+        if (!lightbox?.classList.contains("open")) return;
+        if (e.key === "Escape") closeLB();
+        if (e.key === "ArrowLeft") show(current - 1);
+        if (e.key === "ArrowRight") show(current + 1);
+      });
+
+      // 触控滑动（移动端）?
+      let sx = 0, sy = 0, touching = false;
+      lightbox?.addEventListener("touchstart", (e) => {
+        if (!lightbox.classList.contains("open")) return;
+        touching = true;
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+      }, { passive: true });
+
+      lightbox?.addEventListener("touchend", (e) => {
+        if (!touching || !lightbox.classList.contains("open")) return;
+        touching = false;
+        const ex = e.changedTouches[0].clientX;
+        const ey = e.changedTouches[0].clientY;
+        const dx = ex - sx;
+        const dy = ey - sy;
+
+        // 横向为主才切图，避免上下滑误触?
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0) show(current - 1);
+          else show(current + 1);
+        }
+      }, { passive: true });
+
+      // --- Share: copy link / wechat ---
+      const shareCopy = document.getElementById("shareCopy");
+      const shareWechat = document.getElementById("shareWechat");
+      shareCopy?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          shareCopy.textContent = "✅ 已复制";
+          setTimeout(() => { shareCopy.textContent = "🔗 复制链接"; }, 2000);
+        } catch {
+          shareCopy.textContent = "❌ 复制失败";
+          setTimeout(() => { shareCopy.textContent = "🔗 复制链接"; }, 2000);
+        }
+      });
+      shareWechat?.addEventListener("click", () => {
+        alert("微信分享：请复制链接后粘贴到微信聊天或朋友圈。\n\n" + location.href);
+      });
+
+      // --- Mobile TOC drawer ---
+      const tocToggle = document.getElementById("tocToggle");
+      const tocDrawer = document.getElementById("tocDrawer");
+      const tocOverlay = document.getElementById("tocOverlay");
+      const tocClose = document.getElementById("tocClose");
+      const tocMobileLinks = document.querySelectorAll(".toc-mobile-link");
+
+      const openToc = () => { tocDrawer?.classList.add("open"); document.body.style.overflow = "hidden"; };
+      const closeToc = () => { tocDrawer?.classList.remove("open"); document.body.style.overflow = ""; };
+
+      tocToggle?.addEventListener("click", openToc);
+      tocOverlay?.addEventListener("click", closeToc);
+      tocClose?.addEventListener("click", closeToc);
+      tocMobileLinks.forEach((a) => a.addEventListener("click", closeToc));
+      window.addEventListener("keydown", (e) => { if (e.key === "Escape" && tocDrawer?.classList.contains("open")) closeToc(); });
+    </script>
+  </body>
+</html>

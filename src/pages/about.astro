@@ -1,0 +1,117 @@
+---
+import "../styles/linear.css";
+import SeoHead from "../components/SeoHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../consts";
+
+const canonicalURL = new URL("/about", SITE_URL).toString();
+const pageTitle = `关于本站 | ${SITE_TITLE}`;
+const pageDescription = "外贸情报局面向外贸从业者，整理客户开发、海关数据、汇率结算、跨境物流、外贸软件和 AI 工具相关的实战文章。";
+const aboutSchema = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalURL,
+  inLanguage: "zh-CN",
+  isPartOf: {
+    "@type": "WebSite",
+    name: SITE_TITLE,
+    url: SITE_URL,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_TITLE,
+    url: SITE_URL,
+    logo: new URL("/favicon.ico", SITE_URL).toString(),
+  },
+};
+export const prerender = true;
+
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead title={pageTitle} description={pageDescription} canonical={canonicalURL} structuredData={aboutSchema} />
+  </head>
+
+  <body class="ln ln-home">
+    <SiteHeader active="about" />
+
+    <main class="ln-wrap">
+      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+        <div class="ln-kicker">关于本站</div>
+        <h1 class="ln-h1">{SITE_TITLE}</h1>
+        <p class="ln-sub">{SITE_DESCRIPTION}</p>
+      </section>
+
+      <section class="ln-section ln-reveal">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">站点定位</h2>
+          <div class="ln-section-meta">面向外贸实战</div>
+        </div>
+        <div class="ln-section-grid">
+          <section class="ln-section-panel">
+            <div class="ln-section-panel-head">
+              <h3>关注什么</h3>
+              <p>客户开发、海关数据、汇率结算、跨境物流、关税政策、外贸软件和 AI 工具。</p>
+            </div>
+          </section>
+          <section class="ln-section-panel">
+            <div class="ln-section-panel-head">
+              <h3>适合谁看</h3>
+              <p>外贸业务员、SOHO、工厂外贸负责人、跨境团队和正在搭建获客流程的企业。</p>
+            </div>
+          </section>
+          <section class="ln-section-panel">
+            <div class="ln-section-panel-head">
+              <h3>内容方式</h3>
+              <p>以文章笔记、工具观察、市场变化和实操建议为主，尽量把信息转成可执行动作。</p>
+            </div>
+          </section>
+          <section class="ln-section-panel">
+            <div class="ln-section-panel-head">
+              <h3>更新说明</h3>
+              <p>文章会随 Notion 内容库发布自动同步，站点会持续补充专题、标签和相关内容归档。</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="ln-glass ln-reveal">
+        <div class="ln-glass-head">
+          <div>
+            <div class="ln-glass-title">内容声明</div>
+            <div class="ln-glass-meta">阅读前说明</div>
+          </div>
+          <a class="ln-chip" href="/">返回首页</a>
+        </div>
+        <div class="ln-empty" style="text-align:left; align-items:flex-start;">
+          <div class="ln-empty-sub" style="max-width:76ch; line-height:1.8;">
+            本站内容用于外贸信息整理和业务参考，不构成法律、财务或投资建议。涉及政策、关税、汇率和平台规则时，请以官方文件、银行报价、物流渠道和服务商实际通知为准。
+          </div>
+        </div>
+      </section>
+
+      <footer class="ln-foot ln-reveal">
+        <span>© {new Date().getFullYear()} {SITE_TITLE}</span>
+        <span class="ln-dot">·</span>
+        <a class="ln-navlink" href="/">返回首页</a>
+      </footer>
+    </main>
+
+    <script is:inline>
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>

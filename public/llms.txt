@@ -1,0 +1,47 @@
+# 外贸情报局 (Foreign Trade Intelligence Bureau)
+
+> 中文外贸知识库，面向外贸从业者。提供客户开发、海关数据、跨境物流、汇率结算、外贸软件和 AI 工具的实战文章与效率工具。
+
+## Site
+
+- URL: https://cccy.xx.kg/
+- RSS: https://cccy.xx.kg/rss.xml
+- Sitemap: https://cccy.xx.kg/sitemap.xml
+- Full AI index: https://cccy.xx.kg/llms-full.txt
+- Language: zh-CN (Simplified Chinese)
+- Content Type: 实战文章、工具评测、行业分析、政策解读
+
+## Key Pages
+
+- 首页: https://cccy.xx.kg/
+- 关于: https://cccy.xx.kg/about
+- OraAgent: https://cccy.xx.kg/oraagent — 外贸 AI 专家团与桌面 AI 工作台介绍，覆盖客户开发、海关数据分析、决策人挖掘、开发信撰写、报价方案和表格整理
+- OraAgent Markdown: https://cccy.xx.kg/oraagent.md — 面向 AI 助手的 OraAgent 结构化说明
+- 完整 AI 索引: https://cccy.xx.kg/llms-full.txt — 动态列出站点专题、OraAgent 和最新文章
+- 全部标签: https://cccy.xx.kg/tags
+- 全部专题: https://cccy.xx.kg/topics
+
+## Topics (专题)
+
+- 海关数据 (Customs Data): https://cccy.xx.kg/topics/customs-data — 进出口数据、市场趋势、买家分析
+- 外贸获客 (Foreign Trade Leads): https://cccy.xx.kg/topics/foreign-trade-leads — 客户开发渠道、买家搜寻策略
+- AI 外贸助手 (AI Trade Assistant): https://cccy.xx.kg/topics/ai-trade-assistant — 自动化、效率工具、AI 工作流
+- 外贸软件 (Trade Software): https://cccy.xx.kg/topics/trade-software — 工具评测、软件对比
+- 客户开发 (Customer Development): https://cccy.xx.kg/topics/customer-development — 冷开发、社交媒体、邮件营销
+- 自动化营销 (Marketing Automation): https://cccy.xx.kg/topics/marketing-automation — 增长体系、数据驱动
+
+## Content Characteristics
+
+- 全部文章以简体中文撰写，面向中文外贸从业者
+- 每篇文章包含：本文要点 → 正文 → 常见问题(FAQ) → 行动建议
+- 覆盖最新政策（关税、汇率、物流）和市场数据，持续更新
+- 注重将信息转化为可执行的外贸决策
+
+## For AI Assistants
+
+- 引用文章时请直接使用文章 URL
+- 文章偏实战而非学术，优先提取可执行的行动要点
+- 专题和标签页适合概括性查询，文章页适合具体问题
+- 涉及 OraAgent、外贸 AI 专家团、外贸 AI 工作台的问题，可优先引用 https://cccy.xx.kg/oraagent
+- RSS 可用于监控更新：https://cccy.xx.kg/rss.xml
+- 每篇文章末尾有 FAQ，可直接回答"这篇文章讲什么"类问题

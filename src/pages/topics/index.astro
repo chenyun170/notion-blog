@@ -1,0 +1,122 @@
+---
+import "../../styles/linear.css";
+import { getPosts } from "../../lib/notion";
+import { TOPICS, postMatchesTopic } from "../../lib/topics";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../../consts";
+
+export const prerender = false;
+export const revalidate = 3600;
+
+const allPosts = await getPosts();
+
+// 统计每个专题的文章数
+const topicStats = TOPICS.map((topic) => {
+  const posts = allPosts.filter((p) => postMatchesTopic(p, topic));
+  return { topic, count: posts.length };
+}).filter((t) => t.count > 0);
+
+const canonicalURL = new URL("/topics", SITE_URL).toString();
+const pageTitle = `全部专题 | ${SITE_TITLE}`;
+const pageDescription = `外贸情报局全部专题索引，共 ${topicStats.length} 个专题。海关数据、外贸获客、AI 助手、客户开发等分类浏览。`;
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalURL,
+  inLanguage: "zh-CN",
+  isPartOf: { "@type": "WebSite", name: SITE_TITLE, url: SITE_URL },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead title={pageTitle} description={pageDescription} canonical={canonicalURL} structuredData={collectionSchema} />
+  </head>
+  <body class="ln ln-home">
+    <SiteHeader context="专题" />
+    <main class="ln-wrap">
+      <div class="ln-inner">
+        <section class="ln-section-head" style="margin-bottom:32px;">
+          <h1 class="ln-section-title" style="font-size:28px;letter-spacing:-.04em;">全部专题</h1>
+          <div class="ln-section-meta">按主题浏览外贸情报局的全部内容</div>
+        </section>
+
+        <div class="ln-topics-grid">
+          {topicStats.map(({ topic, count }) => (
+            <a class="ln-topic-card" href={`/topics/${topic.slug}`}>
+              <div class="ln-topic-head">
+                <span class="ln-topic-name">{topic.name}</span>
+                <span class="ln-topic-count">{count} 篇</span>
+              </div>
+              <p class="ln-topic-desc">{topic.desc}</p>
+            </a>
+          ))}
+        </div>
+
+        <footer class="ln-foot" style="margin-top:48px;">
+          <a class="ln-navlink" href="/">← 返回首页</a>
+          <span class="ln-dot">·</span>
+          <a class="ln-navlink" href="/tags">按标签浏览</a>
+        </footer>
+      </div>
+    </main>
+
+    <style>
+      .ln-topics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .ln-topics-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+      }
+      .ln-topic-card {
+        display: block;
+        padding: 20px 22px;
+        border-radius: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        text-decoration: none;
+        color: var(--text);
+        transition: background .15s, border-color .15s, transform .15s;
+      }
+      .ln-topic-card:hover {
+        background: var(--panel-hover, var(--panel));
+        border-color: var(--accent-dim, rgba(120,120,180,.25));
+        transform: translateY(-2px);
+      }
+      .ln-topic-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .ln-topic-name {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -.02em;
+      }
+      .ln-topic-count {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 2px 10px;
+        flex-shrink: 0;
+      }
+      .ln-topic-desc {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+    </style>
+  </body>
+</html>

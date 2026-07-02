@@ -1,0 +1,68 @@
+---
+export interface Props {
+  tags?: string[];
+  title?: string;
+  summary?: string;
+}
+
+const { tags = [], title = "", summary = "" } = Astro.props;
+const haystack = [title, summary, ...tags].join(" ").toLowerCase();
+
+const tools = [
+  {
+    name: "OraAgent",
+    tag: "AI",
+    href: "/go/oraagent",
+    desc: "外贸 AI 专家团 · 客户开发 · 数据分析 · 邮件跟进 · 报价整理",
+    keywords: ["ai", "工具", "获客", "客户", "邮件", "开发", "数据", "外贸软件", "自动化", "效率", "软件", "系统"],
+    priority: 0.5,
+  },
+  {
+    name: "海关数据系统",
+    tag: "数据",
+    href: "/go/customs-data",
+    desc: "全球海关数据查询 · 供应商筛选 · 竞争对手分析 · 进出口趋势分析",
+    keywords: ["海关", "数据", "贸易数据", "外贸数据", "进出口", "市场", "采购商", "买家", "供应商"],
+    priority: 0.25,
+  },
+  {
+    name: "决策人邮箱挖掘",
+    tag: "邮箱",
+    href: "/go/decision-email",
+    desc: "矩阵抓取客户联系方式，高效开发客户，立即体验",
+    keywords: ["客户", "获客", "邮箱", "开发", "决策人", "邮件", "联系人", "采购负责人", "跟进"],
+    priority: 0.2,
+  },
+  {
+    name: "供采询盘",
+    tag: "免费签到",
+    href: "/go/supply-leads",
+    desc: "筛选高质量客户 · 查看公司采购详情 · 不限行业",
+    keywords: ["客户", "采购", "询盘", "供应", "获客", "供采", "买家"],
+    priority: 0.1,
+  },
+];
+
+const selected = tools
+  .map((tool, index) => ({
+    ...tool,
+    score: tool.keywords.reduce((score, keyword) => score + (haystack.includes(keyword.toLowerCase()) ? 1 : 0), 0) + tool.priority - index * 0.01,
+  }))
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 3);
+---
+
+<section class="ln-related-tools">
+  <div class="ln-related-title">相关工具推荐</div>
+  <div class="ln-tools-grid">
+    {selected.map((tool) => (
+      <a class="ln-tool-card" href={tool.href} target="_blank" rel="noopener noreferrer" aria-label={`打开${tool.name}`}>
+        <div class="ln-tool-head">
+          <span class="ln-tool-name">{tool.name}</span>
+          <span class="ln-tool-tag">{tool.tag}</span>
+        </div>
+        <p class="ln-tool-desc">{tool.desc}</p>
+      </a>
+    ))}
+  </div>
+</section>

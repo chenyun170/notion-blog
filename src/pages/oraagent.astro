@@ -1,0 +1,559 @@
+---
+import "../styles/linear.css";
+import SeoHead from "../components/SeoHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../consts";
+
+export const prerender = true;
+
+const pageTitle = `OraAgent 外贸 AI 专家团 | ${SITE_TITLE}`;
+const pageDescription = "OraAgent 是面向外贸人的桌面 AI 专家团，覆盖客户开发、海关数据分析、决策人挖掘、开发信撰写、报价方案和表格整理等外贸工作流。";
+const canonicalURL = new URL("/oraagent", SITE_URL).toString();
+const pageImage = new URL("/og/oraagent.png", SITE_URL).toString();
+const downloadUrl = "https://agent.oraskl.com/releases/OraAgent-Setup-1.0.3.exe";
+const sourceUrl = "https://www.oraskl.com/?i=BB54F6";
+const downloadHref = "/go/oraagent-download";
+const sourceHref = "/go/oraagent";
+const customsHref = "/go/oraskl-customs";
+
+const experts = [
+  ["K.Ora", "客户开发专家", "/oraagent/experts/leadfinder.webp"],
+  ["H.Ora", "海关数据专家", "/oraagent/experts/tradescope.webp"],
+  ["Y.Ora", "外贸邮件专家", "/oraagent/experts/mailcraft.webp"],
+  ["J.Ora", "决策人挖掘专家", "/oraagent/experts/decisionlink.webp"],
+  ["D.Ora", "外贸单证专家", "/oraagent/experts/docuguard.webp"],
+  ["P.Ora", "提案报价专家", "/oraagent/experts/quotepilot.webp"],
+  ["X.Ora", "表格数据专家", "/oraagent/experts/sheetmind.webp"],
+  ["B.Ora", "办公助理", "/oraagent/experts/taskflow.webp"],
+];
+
+const skills = [
+  ["客户搜索 Skill", "多维条件精准搜索全球客户，快速找到高质量潜在买家。"],
+  ["海关分析 Skill", "分析贸易记录、采购趋势、供应商结构和市场机会。"],
+  ["决策人挖掘 Skill", "定位关键联系人和采购负责人，让开发信发给真正拍板的人。"],
+  ["邮件开发 Skill", "生成个性化开发信、跟进信和催单邮件，提升回复率。"],
+  ["免费美国海关数据", "输入产品关键词、HS Code、采购商或供应商，发现真实进口记录。"],
+  ["更多外贸 Skill", "报价、装箱、单证、采购分析、客户跟进等能力持续进入 Skill 市场。"],
+];
+
+const faqs = [
+  ["OraAgent 适合哪些外贸场景？", "OraAgent 适合客户开发、海关数据分析、采购商筛选、决策人挖掘、开发信撰写、报价方案整理和日常外贸办公自动化。"],
+  ["OraAgent 和普通 AI 聊天工具有什么区别？", "OraAgent 以外贸工作流为核心，把客户搜索、贸易数据分析、邮件撰写、单证和表格处理拆成多个 AI 专家与 Skill，让任务交付更贴近实际业务。"],
+  ["OraAgent 需要安装吗？", "OraAgent 是 Windows 桌面端工具，适合需要长期做客户开发、数据分析和邮件跟进的外贸团队常驻使用。"],
+  ["个人外贸 SOHO 可以用 OraAgent 吗？", "可以。OraAgent 适合个人外贸 SOHO、外贸业务员、工厂外贸负责人和跨境销售团队，用来把重复的客户开发与资料整理流程交给 AI 专家处理。"],
+  ["OraAgent 能做海关数据分析吗？", "OraAgent 覆盖海关数据分析场景，可以围绕采购记录、市场趋势、供应商结构和潜在买家线索辅助判断外贸机会。"],
+  ["在哪里下载 OraAgent？", "可以从本页的下载 Windows 桌面端按钮获取安装包，也可以进入 OraSkl 官网页面了解更多功能。"],
+];
+
+const trustItems = [
+  ["适用系统", "Windows 桌面端，适合日常常驻使用。"],
+  ["典型用户", "外贸业务员、SOHO、工厂外贸负责人和跨境销售团队。"],
+  ["任务产出", "客户清单、买家线索、联系人方向、开发信、报价思路和表格整理结果。"],
+  ["上手方式", "从一个外贸任务开始，让专家团拆解并协同处理。"],
+];
+
+const softwareSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "OraAgent",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Windows",
+  description: pageDescription,
+  url: canonicalURL,
+  downloadUrl,
+  offers: {
+    "@type": "Offer",
+    url: sourceUrl,
+    priceCurrency: "CNY",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "OraSkl",
+    url: "https://www.oraskl.com/",
+  },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: SITE_TITLE,
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "OraAgent",
+      item: canonicalURL,
+    },
+  ],
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(([question, answer]) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: answer,
+    },
+  })),
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={pageDescription}
+      canonical={canonicalURL}
+      image={pageImage}
+      includeRss={false}
+      structuredData={{
+        "@context": "https://schema.org",
+        "@graph": [softwareSchema, breadcrumbSchema, faqSchema],
+      }}
+    />
+  </head>
+
+  <body class="ln ln-home ln-oraagent">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader active="oraagent" />
+
+    <main class="ln-wrap">
+      <section class="oa-hero">
+        <div class="oa-copy">
+          <div class="ln-kicker">OraAgent · 外贸人的 AI 专家团</div>
+          <h1 class="oa-title">
+            <span>让一支 AI 团队</span>
+            <span>帮你跑外贸增长</span>
+          </h1>
+          <p class="oa-sub">
+            从找客户、查海关数据、挖决策人，到写开发信、做报价方案、整理表格，OraAgent 把外贸开发流程交给多位 AI 专家协同完成。
+          </p>
+          <p class="oa-line">一键启动外贸任务 · 持续安装更多 Skill · 常驻你的电脑桌面</p>
+          <div class="oa-actions">
+            <a class="oa-primary" href={sourceHref} target="_blank" rel="noopener">立即体验 OraAgent</a>
+            <a class="oa-secondary" href={downloadHref} target="_blank" rel="noopener">下载 Windows 桌面端</a>
+          </div>
+          <div class="oa-mini-grid">
+            <a href="#experts"><b>AI 专家团</b><span>从获客到成交协同作战</span></a>
+            <a href="#skills"><b>Skill 市场</b><span>按需安装外贸 AI 技能</span></a>
+            <a href={customsHref} target="_blank" rel="noopener"><b>真实买家数据</b><span>从海关记录发现采购机会</span></a>
+          </div>
+        </div>
+
+        <div class="oa-workspace" aria-label="OraAgent 桌面工作台预览">
+          <div class="oa-window">
+            <div class="oa-window-top"><span></span><span></span><span></span><strong>Skill Agent Team</strong></div>
+            <div class="oa-task">
+              <small>当前任务</small>
+              <b>帮我开发欧洲太阳能客户</b>
+              <i></i>
+            </div>
+            <div class="oa-expert-grid" id="experts">
+              {experts.map(([name, role, avatar]) => (
+                <div class="oa-expert">
+                  <img src={avatar} alt={name} width="52" height="52" loading="lazy" decoding="async" />
+                  <span><b>{name}</b><em>{role}</em></span>
+                </div>
+              ))}
+            </div>
+            <div class="oa-prompt">向团队提问，开始一次外贸任务...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ln-section">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">适合谁用</h2>
+          <div class="ln-section-meta">下载前快速判断</div>
+        </div>
+        <div class="oa-trust-grid">
+          {trustItems.map(([title, desc]) => (
+            <div class="oa-trust">
+              <b>{title}</b>
+              <p>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="ln-section">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">工作流</h2>
+          <div class="ln-section-meta">一句话发起任务，专家并行交付</div>
+        </div>
+        <div class="oa-steps">
+          <div><span>01</span><b>一句话发起外贸任务</b><p>告诉 OraAgent 目标市场、产品和开发对象。</p></div>
+          <div><span>02</span><b>多位专家自动拆解协作</b><p>客户搜索、海关分析、联系人挖掘和邮件撰写并行推进。</p></div>
+          <div><span>03</span><b>交付可执行结果</b><p>客户清单、开发信、跟进建议和报价思路集中输出。</p></div>
+        </div>
+      </section>
+
+      <section class="ln-section" id="skills">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">AI Skill</h2>
+          <div class="ln-section-meta">为外贸工作流设计</div>
+        </div>
+        <div class="oa-skill-grid">
+          {skills.map(([title, desc], index) => (
+            <a class="oa-skill" href={index === 4 ? customsHref : sourceHref} target="_blank" rel="noopener">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <b>{title}</b>
+              <p>{desc}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="ln-section" id="faq">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">常见问题</h2>
+          <div class="ln-section-meta">外贸团队上手前最关心的事</div>
+        </div>
+        <div class="oa-faq-grid">
+          {faqs.map(([question, answer]) => (
+            <details class="oa-faq" open>
+              <summary>{question}</summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section class="oa-final">
+        <div>
+          <div class="ln-kicker">Desktop AI Agent For Global Trade</div>
+          <h2>把外贸开发流程搬进你的桌面 AI 工作台</h2>
+          <p>适合需要持续做客户开发、数据分析、邮件跟进和报价整理的外贸团队。</p>
+        </div>
+        <div class="oa-actions">
+          <a class="oa-primary" href={downloadHref} target="_blank" rel="noopener">下载 Windows 桌面端</a>
+          <a class="oa-secondary" href={sourceHref} target="_blank" rel="noopener">查看 OraSkl 页面</a>
+        </div>
+      </section>
+
+      <footer class="ln-foot">
+        <span>© {new Date().getFullYear()} {SITE_TITLE}</span>
+        <span class="ln-dot">·</span>
+        <a class="ln-navlink" href="/">返回文章</a>
+      </footer>
+    </main>
+
+    <style>
+      .ln-oraagent .ln-wrap { max-width: 1180px; }
+      .oa-hero {
+        display: grid;
+        grid-template-columns: minmax(0, .86fr) minmax(420px, 1.14fr);
+        gap: 44px;
+        align-items: center;
+        min-height: calc(100svh - 96px);
+        padding: 54px 0 70px;
+      }
+      .oa-title {
+        max-width: 620px;
+        margin: 14px 0 0;
+        font-size: clamp(46px, 5.8vw, 76px);
+        line-height: 1.04;
+        letter-spacing: -0.04em;
+        font-weight: 950;
+      }
+      .oa-title span {
+        display: block;
+        white-space: nowrap;
+      }
+      .oa-sub {
+        max-width: 58ch;
+        margin: 22px 0 0;
+        font-size: 16px;
+        color: var(--text);
+        line-height: 1.8;
+      }
+      .oa-line {
+        margin: 14px 0 0;
+        color: #f97316;
+        font-weight: 750;
+      }
+      .oa-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 30px;
+      }
+      .oa-primary,
+      .oa-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 22px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 850;
+      }
+      .oa-primary {
+        color: #1a0d04;
+        background: #f97316;
+        border: 1px solid rgba(249,115,22,.82);
+      }
+      .oa-secondary {
+        color: var(--text);
+        border: 1px solid var(--line2);
+        background: var(--panel);
+      }
+      .oa-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .oa-mini-grid a,
+      .oa-skill,
+      .oa-steps > div,
+      .oa-faq,
+      .oa-final {
+        color: var(--text);
+        text-decoration: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 8px;
+      }
+      .oa-mini-grid a {
+        min-height: 72px;
+        padding: 14px 16px;
+      }
+      .oa-mini-grid b,
+      .oa-mini-grid span { display: block; }
+      .oa-mini-grid span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+        margin-top: 4px;
+      }
+      .oa-window {
+        border: 1px solid var(--line2);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(16,18,26,.88);
+        box-shadow: var(--shadow);
+      }
+      html:not(.dark) .oa-window { background: rgba(255,255,255,.72); }
+      .oa-window-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+      }
+      .oa-window-top span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ff647d;
+      }
+      .oa-window-top span:nth-child(2) { background: #ffc85a; }
+      .oa-window-top span:nth-child(3) { background: #f97316; }
+      .oa-window-top strong {
+        margin-left: auto;
+        font-size: 12px;
+      }
+      .oa-task {
+        margin-top: 12px;
+        padding: 18px;
+        border-radius: 10px;
+        background: rgba(0,0,0,.28);
+      }
+      html:not(.dark) .oa-task { background: rgba(10,12,16,.06); }
+      .oa-task small,
+      .oa-task b {
+        display: block;
+      }
+      .oa-task small { color: var(--muted); }
+      .oa-task b {
+        margin-top: 3px;
+        font-size: 20px;
+      }
+      .oa-task i {
+        display: block;
+        height: 7px;
+        margin-top: 14px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #f97316 0 72%, rgba(255,255,255,.08) 72%);
+      }
+      .oa-expert-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .oa-expert {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-height: 70px;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.045);
+      }
+      html:not(.dark) .oa-expert { background: rgba(10,12,16,.035); }
+      .oa-expert img {
+        width: 52px;
+        height: 52px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .oa-expert b,
+      .oa-expert em {
+        display: block;
+        font-style: normal;
+      }
+      .oa-expert em {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .oa-prompt {
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-radius: 9px;
+        color: #0f0f0f;
+        border: 1px solid rgba(249,115,22,.24);
+        background: rgba(249,115,22,.10);
+      }
+      .oa-steps,
+      .oa-skill-grid,
+      .oa-faq-grid,
+      .oa-trust-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .oa-trust-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .oa-steps > div,
+      .oa-skill,
+      .oa-trust,
+      .oa-faq {
+        padding: 18px;
+      }
+      .oa-trust {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 8px;
+      }
+      .oa-trust b {
+        display: block;
+        font-size: 15px;
+      }
+      .oa-steps span,
+      .oa-skill span {
+        display: block;
+        color: #f97316;
+        font-size: 12px;
+        font-weight: 900;
+        margin-bottom: 10px;
+      }
+      .oa-steps b,
+      .oa-skill b {
+        display: block;
+        font-size: 17px;
+      }
+      .oa-steps p,
+      .oa-skill p,
+      .oa-trust p,
+      .oa-faq p,
+      .oa-final p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+      .oa-faq summary {
+        cursor: pointer;
+        font-weight: 850;
+        line-height: 1.45;
+      }
+      .oa-final {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 54px;
+        padding: 26px;
+      }
+      .oa-final h2 {
+        margin: 8px 0 0;
+        font-size: clamp(24px, 4vw, 42px);
+        line-height: 1.1;
+        letter-spacing: -0.045em;
+      }
+      @media (max-width: 900px) {
+        .oa-hero {
+          grid-template-columns: 1fr;
+          min-height: 0;
+          padding-top: 38px;
+        }
+        .oa-title {
+          max-width: 760px;
+          font-size: clamp(44px, 9vw, 72px);
+        }
+        .oa-workspace { order: 2; }
+        .oa-mini-grid,
+        .oa-steps,
+        .oa-skill-grid,
+        .oa-faq-grid,
+        .oa-trust-grid {
+          grid-template-columns: 1fr;
+        }
+        .oa-final {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+      @media (max-width: 560px) {
+        .oa-hero {
+          gap: 22px;
+          padding-top: 28px;
+          padding-bottom: 46px;
+          text-align: center;
+        }
+        .oa-title {
+          max-width: 100%;
+          font-size: clamp(34px, 10.5vw, 46px);
+          line-height: 1.08;
+          letter-spacing: -0.02em;
+        }
+        .oa-sub {
+          margin-top: 16px;
+          font-size: 15px;
+          line-height: 1.68;
+        }
+        .oa-line { margin-top: 10px; }
+        .oa-actions {
+          justify-content: stretch;
+          margin-top: 22px;
+        }
+        .oa-mini-grid { margin-top: 16px; }
+        .oa-primary,
+        .oa-secondary { width: 100%; }
+        .oa-expert-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+
+    <script is:inline>
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>

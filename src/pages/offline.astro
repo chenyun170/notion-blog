@@ -1,0 +1,94 @@
+---
+import "../styles/linear.css";
+import SeoHead from "../components/SeoHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../consts";
+
+export const prerender = true;
+
+const pageTitle = `离线模式 | ${SITE_TITLE}`;
+const pageDescription = "当前网络连接不可用，外贸情报局会优先展示已缓存内容。";
+const canonicalURL = new URL("/offline", SITE_URL).toString();
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={pageDescription}
+      canonical={canonicalURL}
+      robots="noindex, follow"
+      includeRss={false}
+    />
+  </head>
+  <body class="ln ln-home">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader context="离线" />
+
+    <main class="ln-wrap">
+      <section class="ln-offline">
+        <div class="ln-kicker">Offline</div>
+        <h1>网络连接中断</h1>
+        <p>当前处于离线状态。你可以重新加载页面，或者返回首页查看浏览器已经缓存的内容。</p>
+        <div class="ln-offline-actions">
+          <button class="ln-offline-primary" id="reloadBtn" type="button">重新加载</button>
+          <a class="ln-chip" href="/">返回首页</a>
+        </div>
+      </section>
+    </main>
+
+    <style>
+      .ln-offline {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: calc(100svh - 84px);
+        max-width: 680px;
+        padding: 70px 0;
+      }
+      .ln-offline h1 {
+        margin: 12px 0 0;
+        font-size: clamp(40px, 7vw, 72px);
+        line-height: 1.04;
+        letter-spacing: -0.04em;
+      }
+      .ln-offline p {
+        max-width: 54ch;
+        margin: 20px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.8;
+      }
+      .ln-offline-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 28px;
+      }
+      .ln-offline-primary {
+        min-height: 40px;
+        padding: 0 16px;
+        border: 1px solid var(--line2);
+        border-radius: 999px;
+        background: var(--text);
+        color: var(--bg);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 850;
+        cursor: pointer;
+      }
+      @media (max-width: 560px) {
+        .ln-offline {
+          min-height: auto;
+          padding: 48px 0 64px;
+        }
+      }
+    </style>
+
+    <script is:inline>
+      document.getElementById("reloadBtn")?.addEventListener("click", () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# AI-readable indexes
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /oraagent.md
+
+Sitemap: https://cccy.xx.kg/sitemap.xml

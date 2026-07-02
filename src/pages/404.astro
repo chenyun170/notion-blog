@@ -1,0 +1,133 @@
+---
+import "../styles/linear.css";
+import SeoHead from "../components/SeoHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../consts";
+
+export const prerender = true;
+
+const pageTitle = `页面未找到 | ${SITE_TITLE}`;
+const pageDescription = "页面未找到，返回外贸情报局首页继续浏览外贸文章、专题和 OraAgent 工具。";
+const canonicalURL = new URL("/404", SITE_URL).toString();
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={pageDescription}
+      canonical={canonicalURL}
+      robots="noindex, follow"
+      includeRss={false}
+    />
+  </head>
+  <body class="ln ln-home">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader context="404" />
+
+    <main class="ln-wrap">
+      <section class="ln-error">
+        <div class="ln-kicker">404</div>
+        <h1>页面走丢了</h1>
+        <p>这个链接可能已经过期，或者文章地址发生了变化。可以回到首页、按专题继续浏览，或者搜索站内内容。</p>
+
+        <form class="ln-error-search" id="searchForm" role="search">
+          <input id="searchInput404" type="search" placeholder="搜索外贸文章、海关数据、客户开发..." autocomplete="off" />
+          <button type="submit">搜索</button>
+        </form>
+
+        <div class="ln-error-actions">
+          <a class="ln-chip" href="/">返回首页</a>
+          <a class="ln-chip" href="/topics">按专题浏览</a>
+          <a class="ln-chip" href="/tags">按标签浏览</a>
+          <a class="ln-chip" href="/oraagent">OraAgent</a>
+        </div>
+      </section>
+    </main>
+
+    <style>
+      .ln-error {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: calc(100svh - 84px);
+        max-width: 760px;
+        padding: 70px 0;
+      }
+      .ln-error h1 {
+        margin: 12px 0 0;
+        font-size: clamp(44px, 8vw, 86px);
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+      .ln-error p {
+        max-width: 58ch;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.8;
+      }
+      .ln-error-search {
+        display: flex;
+        gap: 10px;
+        max-width: 620px;
+        margin-top: 28px;
+      }
+      .ln-error-search input {
+        flex: 1;
+        min-width: 0;
+        min-height: 46px;
+        padding: 0 16px;
+        border: 1px solid var(--line2);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+      .ln-error-search button {
+        min-height: 46px;
+        padding: 0 20px;
+        border: 1px solid var(--line2);
+        border-radius: 8px;
+        background: var(--text);
+        color: var(--bg);
+        font: inherit;
+        font-weight: 850;
+        cursor: pointer;
+      }
+      .ln-error-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+      @media (max-width: 560px) {
+        .ln-error {
+          min-height: auto;
+          padding: 48px 0 64px;
+        }
+        .ln-error-search {
+          flex-direction: column;
+        }
+        .ln-error-search button {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <script is:inline>
+      const form = document.getElementById("searchForm");
+      const input = document.getElementById("searchInput404");
+      form?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const query = input?.value?.trim();
+        if (!query) {
+          window.location.href = "/";
+          return;
+        }
+        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(`site:cccy.xx.kg ${query}`)}`;
+      });
+    </script>
+  </body>
+</html>
