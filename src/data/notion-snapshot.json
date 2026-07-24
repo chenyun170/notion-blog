@@ -1,6 +1,106 @@
 {
-  "generatedAt": "2026-07-02T01:41:05.368Z",
+  "generatedAt": "2026-07-24T02:43:04.447Z",
   "posts": [
+    {
+      "id": "3a7ec2f2-9b39-8184-b52c-e1d59bdc47ee",
+      "title": "海关数据到底怎么用？我用了三年，总结出五个步骤",
+      "slug": "how-to-use-customs-data-five-steps",
+      "date": "2026-07-24",
+      "summary": "海关数据不是搜一下公司名就完事了。用对方法，它是外贸获客最强的工具之一。这篇文章拆解了我用了三年总结出的五个实操步骤。从 HS 编码到反向查竞争对手到找到决策人写开发信，每一步对应一个具体问题。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvaG93LXRvLXVzZS1jdXN0b21zLWRhdGEtZml2ZS1zdGVwcy8xMjAwLzgwMA",
+      "tags": [
+        "海关数据",
+        "客户开发",
+        "外贸技巧",
+        "获客"
+      ],
+      "topics": []
+    },
+    {
+      "id": "3a4ec2f2-9b39-8145-a533-da96969f36e8",
+      "title": "【外贸新动态】关税节点还在逼近，物流开始降温，外贸企业先把利润算明白",
+      "slug": "2026-07-21-last24h-trade-news-humanized",
+      "date": "2026-07-21",
+      "summary": "美国关税和转运规则还在收紧，跨境物流从抢运退回到正常节奏，出口继续往东南亚、非洲、欧盟分散。外贸企业要守住的不是消息速度，而是利润和风险边界。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvMjAyNi0wNy0yMS1sYXN0MjRoLXRyYWRlLW5ld3MtaHVtYW5pemVkLzEyMDAvODAw",
+      "tags": [
+        "外贸新动态"
+      ],
+      "topics": []
+    },
+    {
+      "id": "3a3ec2f2-9b39-81b2-b186-e82605a7927d",
+      "title": "【外贸新规】欧盟小包裹开始按件收费，低价直邮时代要变了",
+      "slug": "trade-tariff-0720-2026",
+      "date": "2026-07-20",
+      "summary": "欧盟 7 月起对 150 欧元以下跨境小包按件征收 3 欧元，低价直邮和小包跑量模式承压。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvdHJhZGUtdGFyaWZmLTA3MjAtMjAyNi8xMjAwLzgwMA",
+      "tags": [
+        "外贸新动态",
+        "关税",
+        "跨境电商"
+      ],
+      "topics": []
+    },
+    {
+      "id": "3a0ec2f2-9b39-8138-b5ea-f241697cf5fc",
+      "title": "【外贸市场】关税压力没退，物流通道在提速，外贸企业先盯这三件事",
+      "slug": "trade-tariff-0717-2026",
+      "date": "2026-07-17",
+      "summary": "今天这版只说 7 月 16 日的外贸新内容，不掺旧稿。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvdHJhZGUtdGFyaWZmLTA3MTctMjAyNi8xMjAwLzgwMA",
+      "tags": [
+        "外贸新动态",
+        "关税",
+        "物流",
+        "汇率"
+      ],
+      "topics": []
+    },
+    {
+      "id": "391ec2f2-9b39-81cf-8d7c-d6050d1bf724",
+      "title": "【7月新规落地】年初就在传的事终于来了，做欧盟的朋友昨晚应该没睡好",
+      "slug": "eu-tariff-vietnam-indonesia-july-2026",
+      "date": "2026-07-02",
+      "summary": "7月1日起，欧盟取消150欧以下包裹关税豁免，越南电商首次入法，印尼收紧进口商品规则，人民币持续升值挤压出口利润——三项冲击同时落地，外贸人如何调整？",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvZXUtdGFyaWZmLXZpZXRuYW0taW5kb25lc2lhLWp1bHktMjAyNi8xMjAwLzgwMA",
+      "tags": [
+        "外贸新动态",
+        "关税政策",
+        "2026",
+        "汇率"
+      ],
+      "topics": []
+    },
+    {
+      "id": "38aec2f2-9b39-8166-a4c0-c78fc77f5e1f",
+      "title": "24小时内最该盯的外贸信号：霍尔木兹海峡恢复通航，全球供应链先松一口气",
+      "slug": "hormuz-global-trade-2026-06-24",
+      "date": "2026-06-24",
+      "summary": "Reuters 6月24日报道称，中国外交部长王毅呼吁尽快恢复霍尔木兹海峡正常通航，以稳定全球工业链和供应链。对外贸人来说，这条消息直接关系到能源成本、海运节奏和后续报价。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvaG9ybXV6LWdsb2JhbC10cmFkZS0yMDI2LTA2LTI0LzEyMDAvODAw",
+      "tags": [
+        "外贸新动态"
+      ],
+      "topics": []
+    },
+    {
+      "id": "389ec2f2-9b39-81f0-be6d-c01d8e0a1a75",
+      "title": "外贸人今天重点看这4个信号：关税、物流、汇率、订单都在变",
+      "slug": "waimao-four-signals-2026-06-24",
+      "date": "2026-06-24",
+      "summary": "今天外贸圈真正该盯的，是关税、物流、汇率、订单四个信号。关税扰动还在，物流偏紧，汇率有波动，订单节奏也在前移。",
+      "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvd2FpbWFvLWZvdXItc2lnbmFscy0yMDI2LTA2LTI0LzEyMDAvODAw",
+      "tags": [
+        "外贸快讯",
+        "关税",
+        "物流",
+        "汇率",
+        "订单",
+        "2026"
+      ],
+      "topics": []
+    },
     {
       "id": "389ec2f2-9b39-81f8-8cbc-f6b4ef1c0190",
       "title": "【外贸新动态】2026-06-24 中国外贸稳健增长概览",
@@ -338,6 +438,8 @@
       "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvZm9yZWlnbi10cmFkZS1uZXdzLTIwMjYtMDUtMjAvMTIwMC84MDA",
       "tags": [
         "News",
+        "??",
+        "?????",
         "2026",
         "跨境物流",
         "外贸新动态"
@@ -353,6 +455,8 @@
       "cover": "/api/img/aHR0cHM6Ly9waWNzdW0ucGhvdG9zL3NlZWQvZm9yZWlnbi10cmFkZS1uZXdzLTIwMjYtMDUtMTkvMTIwMC84MDA",
       "tags": [
         "News",
+        "??",
+        "?????",
         "2026",
         "跨境物流"
       ],
