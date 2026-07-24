@@ -38,7 +38,12 @@ const related = relatedCandidates
   .filter(({ item }) => (item.tags ?? []).some((tag) => currentTags.has(tag.toLowerCase())))
   .map(({ item }) => item)
   .slice(0, 3);
-const fallbackRelated = related.length ? related : allPosts.filter((item) => item.slug !== post.slug).slice(0, 3);
+// Always fill to 3 cards: prefer same-tag matches, then latest posts.
+const relatedSlugs = new Set(related.map((item) => item.slug));
+const fillerRelated = allPosts
+  .filter((item) => item.slug !== post.slug && !relatedSlugs.has(item.slug))
+  .slice(0, Math.max(0, 3 - related.length));
+const fallbackRelated = [...related, ...fillerRelated].slice(0, 3);
 const canonicalURL = new URL(`/posts/${post.slug}`, SITE_URL).toString();
 const pageDescription = post.summary || `来自 ${SITE_TITLE} 的文章`;
 const pageImage = new URL(`/og/${encodeURIComponent(post.slug)}.png`, SITE_URL).toString();

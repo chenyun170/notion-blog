@@ -40,12 +40,14 @@ export type PostDetail = {
 };
 
 function slugify(text: string): string {
+  // Keep CJK so Chinese headings still produce usable anchor ids for TOC.
   return (text ?? "")
     .toLowerCase()
     .trim()
     .replace(/[\s_]+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-+/g, "-");
+    .replace(/[^\w\u4e00-\u9fff\u3400-\u4dbf\-]+/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function stripMarkdownText(text: string): string {
@@ -502,6 +504,17 @@ async function renderBlocksToHtml(blocks: any[], fallbackImageAlt = ""): Promise
 
   let html = "";
   const toc: TocItem[] = [];
+  const usedIds = new Set<string>();
+
+  const uniqueHeadingId = (text: string) => {
+    let id = slugify(text);
+    if (!id) id = "section";
+    let out = id;
+    let n = 2;
+    while (usedIds.has(out)) out = `${id}-${n++}`;
+    usedIds.add(out);
+    return out;
+  };
 
   let listMode: "ul" | "ol" | null = null;
   let adviceMode = false;
@@ -578,13 +591,13 @@ async function renderBlocksToHtml(blocks: any[], fallbackImageAlt = ""): Promise
     if (t === "heading_1") {
       adviceMode = false;
       const text = (b.heading_1?.rich_text ?? []).map((x: any) => x.plain_text).join("").trim();
-      if (!text) continue; const id = slugify(text);
+      if (!text) continue; const id = uniqueHeadingId(text);
       html += `<h1 id="${id}">${escapeHtml(text)}</h1>`;
       continue;
     }
     if (t === "heading_2") {
       const text = (b.heading_2?.rich_text ?? []).map((x: any) => x.plain_text).join("").trim();
-      if (!text) continue; const id = slugify(text);
+      if (!text) continue; const id = uniqueHeadingId(text);
       adviceMode = text.includes("外贸人建议");
       toc.push({ id, text, depth: 2 });
       html += `<h2 id="${id}"${text.includes("外贸人建议") ? ' class="n-advice-title"' : ""}>${escapeHtml(text)}</h2>`;
@@ -592,7 +605,7 @@ async function renderBlocksToHtml(blocks: any[], fallbackImageAlt = ""): Promise
     }
     if (t === "heading_3") {
       const text = (b.heading_3?.rich_text ?? []).map((x: any) => x.plain_text).join("").trim();
-      if (!text) continue; const id = slugify(text);
+      if (!text) continue; const id = uniqueHeadingId(text);
       toc.push({ id, text, depth: 3 });
       html += `<h3 id="${id}">${escapeHtml(text)}</h3>`;
       continue;
