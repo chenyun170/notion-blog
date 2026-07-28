@@ -1,0 +1,216 @@
+<body class="ln ln-article">
+    <!-- progress -->
+    <div class="ln-progress">
+      <div class="ln-progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- top -->
+    <SiteHeader context="正文" />
+
+    <main class="ln-wrap">
+      <article class="ln-post">
+        <header class="ln-post-head">
+          <nav class="ln-breadcrumb" aria-label="Breadcrumb">
+            <a href="/">首页</a>
+            {primaryTag ? (
+              <>
+                <span class="ln-dot">·</span>
+                <a href={`/tags/${encodeURIComponent(primaryTag)}`}>{primaryTag}</a>
+              </>
+            ) : null}
+            <span class="ln-dot">·</span>
+            <span aria-current="page">{post.title}</span>
+          </nav>
+
+          <div class="ln-post-meta">
+            <span class="ln-muted">{post.date || ""}</span>
+            <span class="ln-dot">·</span>
+            <span class="ln-muted">约 {readingMinutes} 分钟阅读</span>
+            <span class="ln-dot">·</span>
+            <span class="ln-muted" id="viewCount" data-slug={post.slug}>阅读 --</span>
+            {post.tags?.length ? <span class="ln-dot">·</span> : null}
+            {post.tags?.length ? <span class="ln-muted">{post.tags.join(" · ")}</span> : null}
+          </div>
+
+          <div class="ln-share" id="shareArea">
+            <span class="ln-share-label">分享：</span>
+            <button class="ln-share-btn" id="shareCopy" type="button" title="复制链接">🔗 复制链接</button>
+            <button class="ln-share-btn" id="copyPoints" type="button" title="复制本文要点">📋 复制要点</button>
+            <button class="ln-share-btn" id="copyFull" type="button" title="复制全文">📄 复制全文</button>
+            <a class="ln-share-btn" href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(canonicalURL)}`} title="邮件分享">📧 邮件</a>
+            <button class="ln-share-btn" id="shareWechat" type="button" title="微信分享">💬 微信</button>
+          </div>
+
+          <h1 class="ln-post-title">{post.title}</h1>
+
+          {post.summary ? <p class="ln-post-summary">{post.summary}</p> : null}
+
+          {post.cover ? (
+            <div class="ln-cover">
+              <img src={post.cover} alt={post.title} width="1200" height="630" loading="eager" decoding="async" fetchpriority="high" />
+            </div>
+          ) : null}
+        </header>
+
+        <div class="ln-post-grid">
+          <!-- content -->
+          <div class="ln-content">
+            {keyPoints.length ? (
+              <section class="ln-keypoints" aria-labelledby="keypoints-title">
+                <div class="ln-keypoints-head">
+                  <div class="ln-keypoints-label" id="keypoints-title">本文要点</div>
+                  <button class="ln-share-btn ln-copy-inline" id="copyPointsInline" type="button" title="复制本文要点">复制要点</button>
+                </div>
+                <ul id="keyPointsList">
+                  {keyPoints.map((point) => <li>{point}</li>)}
+                </ul>
+              </section>
+            ) : null}
+            <div class="ln-prose" id="prose" set:html={html}></div>
+            <section class="ln-faq" aria-labelledby="faq-title">
+              <div class="ln-faq-title" id="faq-title">常见问题</div>
+              <div class="ln-faq-list">
+                {faqs.map((faq) => (
+                  <div class="ln-faq-item">
+                    <h3>{faq.question}</h3>
+                    <p>{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <RelatedTools tags={post.tags ?? []} title={post.title} summary={post.summary} />
+          </div>
+
+          <!-- toc -->
+          <aside class="ln-toc">
+            <div class="ln-toc-title">目录</div>
+            <nav class="ln-toc-nav">
+              {toc?.length ? (
+                <ul id="tocList">
+                  {toc.map((t) => (
+                    <li class={`ln-toc-item depth-${t.depth}`}>
+                      <a href={`#${t.id}`}>{t.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div class="ln-muted" style="font-size:12px;">-</div>
+              )}
+            </nav>
+          </aside>
+
+          <!-- Mobile TOC drawer -->
+          <button class="ln-toc-toggle" id="tocToggle" type="button" aria-label="目录" title="目录">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h12M3 10h8M3 15h12"/></svg>
+          </button>
+          <div class="ln-toc-drawer" id="tocDrawer">
+            <div class="ln-toc-overlay" id="tocOverlay"></div>
+            <div class="ln-toc-panel">
+              <div class="ln-toc-title">
+                <span>目录</span>
+                <button class="ln-toc-close" id="tocClose" type="button" aria-label="关闭">✕</button>
+              </div>
+              <nav class="ln-toc-nav">
+                {toc?.length ? (
+                  <ul id="tocListMobile">
+                    {toc.map((t) => (
+                      <li class={`ln-toc-item depth-${t.depth}`}>
+                        <a href={`#${t.id}`} class="toc-mobile-link">{t.text}</a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div class="ln-muted" style="font-size:12px;">无目录</div>
+                )}
+              </nav>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      {fallbackRelated.length ? (
+        <section class="ln-related-posts">
+          <div class="ln-section-head">
+            <h2 class="ln-section-title">相关阅读</h2>
+            <div class="ln-section-meta">同主题继续读</div>
+          </div>
+          <div class="ln-related-grid">
+            {fallbackRelated.map((item) => (
+              <a class="ln-related-card" href={`/posts/${item.slug}`}>
+                {item.cover ? <img src={item.cover} alt={item.title} width="360" height="220" loading="lazy" decoding="async" /> : null}
+                <span class="ln-related-card-body">
+                  <span class="ln-related-card-meta">{item.date || ""}</span>
+                  <span class="ln-related-card-title">{item.title}</span>
+                  {item.summary ? <span class="ln-related-card-desc">{item.summary}</span> : null}
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <!-- 上下篇导航 -->
+      {prev || next ? (
+        <nav class="ln-post-nav">
+          {prev ? (
+            <a class="ln-post-nav-card" href={`/posts/${prev.slug}`}>
+              <span class="ln-post-nav-label">← 上一篇</span>
+              <span class="ln-post-nav-title">{prev.title}</span>
+              {prev.summary ? <span class="ln-post-nav-desc">{prev.summary}</span> : null}
+              {prev.date ? <span class="ln-post-nav-date">{prev.date}</span> : null}
+            </a>
+          ) : (
+            <div class="ln-post-nav-card ln-post-nav-empty"></div>
+          )}
+          {next ? (
+            <a class="ln-post-nav-card ln-post-nav-next" href={`/posts/${next.slug}`}>
+              <span class="ln-post-nav-label">下一篇 →</span>
+              <span class="ln-post-nav-title">{next.title}</span>
+              {next.summary ? <span class="ln-post-nav-desc">{next.summary}</span> : null}
+              {next.date ? <span class="ln-post-nav-date">{next.date}</span> : null}
+            </a>
+          ) : (
+            <div class="ln-post-nav-card ln-post-nav-empty"></div>
+          )}
+        </nav>
+      ) : null}
+
+      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+
+      <footer class="ln-foot">
+        <a class="ln-navlink" href="/">← 返回首页</a>
+        <span class="ln-dot">·</span>
+        <span class="ln-muted">内容持续更新</span>
+      </footer>
+    </main>
+
+      <!-- ↑ Scroll to top (with percent) -->
+<button
+  class="ln-topbtn"
+  id="toTop"
+  type="button"
+  aria-label="回到顶部"
+  title="回到顶部"
+>
+  <span class="ln-topbtn-num" id="toTopNum">0</span>
+  <span class="ln-topbtn-sym">%</span>
+</button>
+
+
+    <!-- Lightbox -->
+    <div class="ln-lightbox" id="lightbox" aria-hidden="true">
+      <div class="ln-lightbox-inner" role="dialog" aria-modal="true">
+        <button class="ln-lightbox-close" id="lbClose" type="button" aria-label="关闭">✕</button>
+        <button class="ln-lightbox-nav ln-lightbox-prev" id="lbPrev" type="button" aria-label="上一张">←</button>
+        <img class="ln-lightbox-img" id="lbImg" src="" alt="" />
+        <button class="ln-lightbox-nav ln-lightbox-next" id="lbNext" type="button" aria-label="下一张">→</button>
+
+        <div class="ln-lightbox-meta" id="lbMeta">
+          <span id="lbIndex">1</span>
+          <span class="ln-lightbox-dot">·</span>
+          <span id="lbTotal">1</span>
+        </div>
+      </div>
+    </div>
+
+    

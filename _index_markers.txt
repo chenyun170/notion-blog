@@ -1,0 +1,25 @@
+4: import { TOPICS } from "../lib/topics";
+5: import NewsletterSubscribe from "../components/NewsletterSubscribe.astro";
+21: /** 热门候选：SSR 骨架先占位，前端按阅读量重排 */
+111: <!-- HERO：短介绍 + 搜索 -->
+112: <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+125: <!-- 全部文章：筛选贴在列表上方 -->
+126: <section class="ln-glass ln-reveal" aria-label="posts glass" id="listRoot">
+129: <div class="ln-glass-title">全部文章</div>
+138: <button class="ln-pill active" type="button" data-tag="__all">全部</button>
+143: <button class="ln-pill ln-pill-more" id="pillMore" type="button" aria-expanded="false">更多</button>
+180: <!-- EMPTY STATE -->
+195: <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+246: const moreBtn = document.getElementById("pillMore");
+267: const displayItems = Array.from(document.querySelectorAll("#listRoot .ln-feed-item"));
+402: document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+435: document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+445: document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+492: const section = document.getElementById("hotSection");
+496: const cards = Array.from(grid.querySelectorAll(".ln-hot-card"));
+541: return `<a class="ln-hot-card" href="/posts/${it.slug}">
+542: <span class="ln-hot-rank">${idx + 1}</span>
+543: <span class="ln-hot-main">
+544: <span class="ln-hot-title">${escapeHtml(it.title)}</span>
+545: <span class="ln-hot-meta">
+546: <span class="ln-hot-views">阅读 ${it.views}</span>

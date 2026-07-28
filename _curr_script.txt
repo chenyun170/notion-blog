@@ -1,0 +1,368 @@
+205|    <script>
+206|      import Fuse from "fuse.js";
+207|
+208|      // =========================
+209|      // Theme
+210|      // =========================
+211|      const root = document.documentElement;
+212|      const key = "theme";
+213|      const saved = localStorage.getItem(key);
+214|      const btn = document.getElementById("themeToggle");
+215|      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+216|      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+217|      btn?.addEventListener("click", () => {
+218|        root.classList.toggle("dark");
+219|        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+220|        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+221|      });
+222|
+223|      // =========================
+224|      // Reveal animations
+225|      // =========================
+226|      const revealEls = Array.from(document.querySelectorAll(".ln-reveal"));
+227|      if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+228|        document.documentElement.classList.add("reveal-ready");
+229|        const io = new IntersectionObserver((entries) => {
+230|          for (const e of entries) {
+231|            if (e.isIntersecting) {
+232|              e.target.classList.add("in");
+233|              io.unobserve(e.target);
+234|            }
+235|          }
+236|        }, { threshold: 0.08 });
+237|        revealEls.forEach(el => io.observe(el));
+238|      } else {
+239|        revealEls.forEach(el => el.classList.add("in"));
+240|      }
+241|
+242|      // =========================
+243|      // Tag pills collapse + More
+244|      // =========================
+245|      const pillWrap = document.getElementById("pillWrap");
+246|      const moreBtn = document.getElementById("pillMore");
+247|      const pills = Array.from(pillWrap.querySelectorAll(".ln-pill")).filter(p => !p.classList.contains("ln-pill-more"));
+248|      const MAX_PILLS = 6;
+249|      function applyPillCollapse() {
+250|        const isExpanded = moreBtn.getAttribute("aria-expanded") === "true";
+251|        pills.forEach((p, i) => { p.style.display = (!isExpanded && i >= MAX_PILLS) ? "none" : "inline-flex"; });
+252|        moreBtn.style.display = pills.length > MAX_PILLS ? "inline-flex" : "none";
+253|        moreBtn.innerText = moreBtn.getAttribute("aria-expanded") === "true" ? "收起" : "更多";
+254|      }
+255|      moreBtn.addEventListener("click", () => {
+256|        const expanded = moreBtn.getAttribute("aria-expanded") === "true";
+257|        moreBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
+258|        applyPillCollapse();
+259|      });
+260|      applyPillCollapse();
+261|
+262|      // =========================
+263|      // Fuse.js search + tag filter
+264|      // =========================
+265|      (function() {
+266|        const PAGE_SIZE = 10;
+267|        const displayItems = Array.from(document.querySelectorAll("#listRoot .ln-feed-item"));
+268|        const articleMap = new Map();
+269|
+270|        for (const el of displayItems) {
+271|          const link = el.querySelector("a[data-title]");
+272|          const href = link?.getAttribute("href") || "";
+273|          if (!href) continue;
+274|          if (!articleMap.has(href)) {
+275|            articleMap.set(href, {
+276|              href,
+277|              title: link.dataset.title || "",
+278|              summary: link.dataset.summary || "",
+279|              tags: (link.dataset.tags || "").split(",").filter(Boolean),
+280|              els: [],
+281|            });
+282|          }
+283|          articleMap.get(href).els.push(el);
+284|        }
+285|
+286|        const searchData = Array.from(articleMap.values());
+287|
+288|        const fuse = new Fuse(searchData, {
+289|          keys: [
+290|            { name: "title", weight: 0.5 },
+291|            { name: "tags", weight: 0.3 },
+292|            { name: "summary", weight: 0.2 },
+293|          ],
+294|          threshold: 0.35,
+295|          ignoreLocation: true,
+296|          minMatchCharLength: 1,
+297|        });
+298|
+299|        const searchInput = document.getElementById("searchInput");
+300|        const clearSearch = document.getElementById("clearSearch");
+301|        const resetBtn = document.getElementById("resetBtn");
+302|        const emptyState = document.getElementById("emptyState");
+303|        const emptyReset = document.getElementById("emptyReset");
+304|        const countText = document.getElementById("countText");
+305|        const pagination = document.getElementById("pagination");
+306|        const pageMeta = document.getElementById("pageMeta");
+307|        const pagePrev = document.getElementById("pagePrev");
+308|        const pageNext = document.getElementById("pageNext");
+309|        const pageNumbers = document.getElementById("pageNumbers");
+310|        const tagBtns = Array.from(document.querySelectorAll(".ln-pill[data-tag]"));
+311|
+312|        let activeTag = "__all";
+313|        let currentPage = 1;
+314|        let filteredItems = searchData;
+315|        let currentQuery = "";
+316|
+317|        function escapeHtml(value) {
+318|          return String(value ?? "")
+319|            .replaceAll("&", "&amp;")
+320|            .replaceAll("<", "&lt;")
+321|            .replaceAll(">", "&gt;")
+322|            .replaceAll('"', "&quot;");
+323|        }
+324|
+325|        function escapeRegExp(value) {
+326|          return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+327|        }
+328|
+329|        function highlightText(value, query) {
+330|          const clean = String(value ?? "");
+331|          if (!query) return escapeHtml(clean);
+332|          const terms = query.split(/\s+/).filter(Boolean).slice(0, 4);
+333|          if (!terms.length) return escapeHtml(clean);
+334|          const re = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+335|          return escapeHtml(clean).replace(re, '<mark class="ln-hit">$1</mark>');
+336|        }
+337|
+338|        function applyHighlights(query) {
+339|          for (const item of searchData) {
+340|            for (const el of item.els) {
+341|              const titleEl = el.querySelector(".ln-feed-title");
+342|              const summaryEl = el.querySelector(".ln-feed-summary");
+343|              if (titleEl) titleEl.innerHTML = highlightText(item.title, query);
+344|              if (summaryEl) summaryEl.innerHTML = highlightText(item.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。", query);
+345|            }
+346|          }
+347|        }
+348|
+349|        function setActiveTag(tag) {
+350|          activeTag = tag;
+351|          tagBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tag === tag));
+352|        }
+353|
+354|        function getPageList(totalPages) {
+355|          if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+356|          const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+357|          const sorted = Array.from(pages).filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+358|          const out = [];
+359|          for (const p of sorted) {
+360|            const last = out[out.length - 1];
+361|            if (last && p - last > 1) out.push("...");
+362|            out.push(p);
+363|          }
+364|          return out;
+365|        }
+366|
+367|        function renderPagination(total, totalPages) {
+368|          if (total === 0) {
+369|            pagination.hidden = true;
+370|            return;
+371|          }
+372|
+373|          const start = (currentPage - 1) * PAGE_SIZE + 1;
+374|          const end = Math.min(currentPage * PAGE_SIZE, total);
+375|          pagination.hidden = false;
+376|          pageMeta.textContent = `显示第 ${start}-${end} 篇，共 ${total} 篇`;
+377|          pagePrev.disabled = currentPage <= 1;
+378|          pageNext.disabled = currentPage >= totalPages;
+379|          pageNumbers.innerHTML = getPageList(totalPages).map((page) => {
+380|            if (page === "...") return `<span class="ln-page-gap" aria-hidden="true">...</span>`;
+381|            const isCurrent = page === currentPage;
+382|            return `<button class="ln-page-num${isCurrent ? " active" : ""}" type="button" data-page="${page}" ${isCurrent ? 'aria-current="page"' : ""}>${page}</button>`;
+383|          }).join("");
+384|        }
+385|
+386|        function renderPage(scroll = false) {
+387|          const total = filteredItems.length;
+388|          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+389|          currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+390|
+391|          displayItems.forEach(el => el.style.display = "none");
+392|          filteredItems
+393|            .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+394|            .forEach(item => item.els.forEach(el => el.style.display = ""));
+395|          applyHighlights(currentQuery);
+396|
+397|          countText.textContent = String(total);
+398|          emptyState.hidden = total > 0;
+399|          renderPagination(total, totalPages);
+400|
+401|          if (scroll) {
+402|            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+403|          }
+404|        }
+405|
+406|        function applyFilter(resetPage = true) {
+407|          const q = (searchInput.value || "").toLowerCase().trim();
+408|          currentQuery = q;
+409|          let matches;
+410|
+411|          if (fuse && q) {
+412|            matches = fuse.search(q).map(r => r.item);
+413|          } else {
+414|            // fallback: simple includes (also used when Fuse not loaded)
+415|            matches = searchData.filter(item => {
+416|              const title = (item.title || "").toLowerCase();
+417|              const summary = (item.summary || "").toLowerCase();
+418|              const tags = item.tags.join(",").toLowerCase();
+419|              return !q || title.includes(q) || summary.includes(q) || tags.includes(q);
+420|            });
+421|          }
+422|
+423|          filteredItems = matches.filter(item =>
+424|            activeTag === "__all" ||
+425|            item.tags.some(t => t.toLowerCase() === activeTag.toLowerCase())
+426|          );
+427|          if (resetPage) currentPage = 1;
+428|          renderPage();
+429|        }
+430|
+431|        tagBtns.forEach(btn => {
+432|          btn.addEventListener("click", () => {
+433|            setActiveTag(btn.dataset.tag);
+434|            applyFilter(true);
+435|            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+436|          });
+437|        });
+438|        let searchScrollTimer = 0;
+439|        searchInput.addEventListener("input", () => {
+440|          applyFilter(true);
+441|          const q = (searchInput.value || "").trim();
+442|          if (!q) return;
+443|          window.clearTimeout(searchScrollTimer);
+444|          searchScrollTimer = window.setTimeout(() => {
+445|            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+446|          }, 280);
+447|        });
+448|        clearSearch.addEventListener("click", () => { searchInput.value = ""; applyFilter(true); searchInput.focus(); });
+449|        pagePrev.addEventListener("click", () => { currentPage -= 1; renderPage(true); });
+450|        pageNext.addEventListener("click", () => { currentPage += 1; renderPage(true); });
+451|        pageNumbers.addEventListener("click", (event) => {
+452|          const btn = event.target.closest("[data-page]");
+453|          if (!btn) return;
+454|          currentPage = Number(btn.dataset.page || 1);
+455|          renderPage(true);
+456|        });
+457|        function resetAll() {
+458|          setActiveTag("__all");
+459|          searchInput.value = "";
+460|          moreBtn.setAttribute("aria-expanded", "false");
+461|          applyPillCollapse();
+462|          applyFilter(true);
+463|        }
+464|        resetBtn.addEventListener("click", resetAll);
+465|        emptyReset.addEventListener("click", resetAll);
+466|
+467|        // =========================
+468|        // Parallax
+469|        // =========================
+470|        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+471|        if (!reduce) {
+472|          let raf = 0;
+473|          window.addEventListener("scroll", () => {
+474|            if (raf) return;
+475|            raf = requestAnimationFrame(() => {
+476|              raf = 0;
+477|              const y = window.scrollY || 0;
+478|              document.documentElement.style.setProperty("--parallaxY", (y * 0.08).toFixed(2) + "px");
+479|            });
+480|          }, { passive: true });
+481|          document.documentElement.style.setProperty("--parallaxY", "0px");
+482|        }
+483|
+484|        // initial
+485|        applyFilter();
+486|
+487|      })();
+488|    
+489|
+490|      // ===== Hot posts by views =====
+491|      (async () => {
+492|        const section = document.getElementById("hotSection");
+493|        const grid = document.getElementById("hotGrid");
+494|        if (!section || !grid) return;
+495|
+496|        const cards = Array.from(grid.querySelectorAll(".ln-hot-card"));
+497|        // Prefer data from all hot candidates embedded below
+498|        const seed = document.getElementById("hotSeed");
+499|        let items = [];
+500|        try {
+501|          items = seed ? JSON.parse(seed.textContent || "[]") : [];
+502|        } catch {
+503|          items = [];
+504|        }
+505|        if (!items.length) {
+506|          items = cards.map((card) => ({
+507|            slug: card.getAttribute("data-slug") || "",
+508|            title: card.getAttribute("data-title") || "",
+509|            date: card.getAttribute("data-date") || "",
+510|            summary: card.getAttribute("data-summary") || "",
+511|          }));
+512|        }
+513|        items = items.filter((it) => it.slug);
+514|        if (!items.length) return;
+515|
+516|        const slugs = items.map((it) => it.slug);
+517|        try {
+518|          // batch in chunks of 20 to avoid long URLs
+519|          const chunks = [];
+520|          for (let i = 0; i < slugs.length; i += 20) chunks.push(slugs.slice(i, i + 20));
+521|          const map = new Map();
+522|          for (const chunk of chunks) {
+523|            const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(","))}`, {
+524|              headers: { Accept: "application/json" },
+525|            });
+526|            if (!res.ok) continue;
+527|            const data = await res.json();
+528|            for (const it of data.items || []) {
+529|              map.set(it.slug, Number(it.count) || 0);
+530|            }
+531|          }
+532|
+533|          const ranked = items
+534|            .map((it) => ({ ...it, views: map.get(it.slug) || 0 }))
+535|            .sort((a, b) => b.views - a.views || String(b.date).localeCompare(String(a.date)))
+536|            .slice(0, 6);
+537|
+538|          grid.innerHTML = ranked
+539|            .map((it, idx) => {
+540|              const dateHtml = it.date ? `<span class="ln-dot">·</span><span>${it.date}</span>` : "";
+541|              return `<a class="ln-hot-card" href="/posts/${it.slug}">
+542|                <span class="ln-hot-rank">${idx + 1}</span>
+543|                <span class="ln-hot-main">
+544|                  <span class="ln-hot-title">${escapeHtml(it.title)}</span>
+545|                  <span class="ln-hot-meta">
+546|                    <span class="ln-hot-views">阅读 ${it.views}</span>
+547|                    ${dateHtml}
+548|                  </span>
+549|                </span>
+550|              </a>`;
+551|            })
+552|            .join("");
+553|
+554|          if (document.getElementById("hotMeta")) {
+555|            document.getElementById("hotMeta").textContent = "按阅读量排序";
+556|          }
+557|        } catch {
+558|          // 保留 SSR 骨架，避免空白跳动
+559|        }
+560|
+561|        function escapeHtml(s) {
+562|          return String(s || "")
+563|            .replace(/&/g, "&amp;")
+564|            .replace(/</g, "&lt;")
+565|            .replace(/>/g, "&gt;")
+566|            .replace(/"/g, "&quot;");
+567|        }
+568|      })();
+569|
+570|</script>
+571|  </body>
+572|</html>

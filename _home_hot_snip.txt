@@ -1,0 +1,82 @@
+hotSeed" set:html={JSON.stringify(hotCandidates.map((p) => ({ slug: p.slug, title: p.title, date: p.date || "", summary: p.summary || "" })))}></script>
+
+      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+      </div>
+
+      <footer class="ln-foot ln-reveal">
+        <span>© {new Date().getFullYear()} 外贸情报局</span>
+        <span class="ln-dot">·</span>
+        <span class="ln-muted">内容持续更新</span>
+      </footer>
+    </main>
+
+    <script>
+      import Fuse from "fuse.js";
+
+      // =========================
+      // Theme
+      // =========================
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+
+      // =========================
+      // Reveal animations
+      // =========================
+      const revealEls = Array.from(document.querySelectorAll(".ln-reveal"));
+      if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("reveal-ready");
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add("in");
+              io.unobserve(e.target);
+            }
+          }
+        }, { threshold: 0.08 });
+        revealEls.forEach(el => io.observe(el));
+      } else {
+        revealEls.forEach(el => el.classList.add("in"));
+      }
+
+      // =========================
+      // Tag pills collapse + More
+      // =========================
+      const pillWrap = document.getElementById("pillWrap");
+      const moreBtn = document.getElementById("pillMore");
+      const pills = Array.from(pillWrap.querySelectorAll(".ln-pill")).filter(p => !p.classList.contains("ln-pill-more"));
+      const MAX_PILLS = 6;
+      function applyPillCollapse() {
+        const isExpanded = moreBtn.getAttribute("aria-expanded") === "true";
+        pills.forEach((p, i) => { p.style.display = (!isExpanded && i >= MAX_PILLS) ? "none" : "inline-flex"; });
+        moreBtn.style.display = pills.length > MAX_PILLS ? "inline-flex" : "none";
+        moreBtn.innerText = moreBtn.getAttribute("aria-expanded") === "true" ? "收起" : "更多";
+      }
+      moreBtn.addEventListener("click", () => {
+        const expanded = moreBtn.getAttribute("aria-expanded") === "true";
+        moreBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
+        applyPillCollapse();
+      });
+      applyPillCollapse();
+
+      // =========================
+      // Fuse.js search + tag filter
+      // =========================
+      (function() {
+        const PAGE_SIZE = 10;
+        const displayItems = Array.from(document.querySelectorAll("#listRoot .ln-feed-item"));
+        const articleMap = new Map();
+
+        for (const el of displayItems) {
+          const link = el.querySelector("a[data-title]");
+          const href = link?.getAttribute("href") || "";
+          if (!href) continue;
+          if (!articleMap.has(hr

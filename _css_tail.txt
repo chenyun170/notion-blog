@@ -1,0 +1,86 @@
+ var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ln-ai-read-text {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 14.5px;
+  color: var(--text);
+}
+.ln-ai-read-steps {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ln-ai-read-steps li::marker {
+  color: rgba(42,160,255,.8);
+}
+
+/* ===== 首页热门文章 ===== */
+.ln-hot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .ln-hot-grid { grid-template-columns: 1fr; }
+}
+.ln-hot-card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.03);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+:root:not(.dark) .ln-hot-card {
+  background: rgba(255,255,255,.72);
+}
+.ln-hot-card:hover {
+  border-color: rgba(42,160,255,.45);
+  transform: translateY(-1px);
+  background: rgba(42,160,255,.06);
+}
+.ln-hot-rank {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #2aa0ff, #6b7cff);
+}
+.ln-hot-card:nth-child(1) .ln-hot-rank { background: linear-gradient(135deg, #ff7a18, #ffb347); }
+.ln-hot-card:nth-child(2) .ln-hot-rank { background: linear-gradient(135deg, #8e9aaf, #c0c7d2); }
+.ln-hot-card:nth-child(3) .ln-hot-rank { background: linear-gradient(135deg, #cd7f32, #e0a36a); }
+.ln-hot-main { min-width: 0; }
+.ln-hot-title {
+  font-weight: 800;
+  font-size: 14.5px;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+.ln-hot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ln-hot-views {
+  color: rgba(42,160,255,.95);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}

@@ -1,0 +1,611 @@
+---
+import "../styles/linear.css";
+import { getPosts } from "../lib/notion";
+import { TOPICS } from "../lib/topics";
+import NewsletterSubscribe from "../components/NewsletterSubscribe.astro";
+import SeoHead from "../components/SeoHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL, NEWSLETTER_ACTION } from "../consts";
+
+export const prerender = false;
+export const revalidate = 3600; // ISR: 每 1 小时重新验证
+const posts = await getPosts();
+
+/** Latest：按日期倒序（无 date 放最后） */
+const latest = [...posts].sort((a, b) => {
+  const ad = a.date ? new Date(a.date).getTime() : -Infinity;
+  const bd = b.date ? new Date(b.date).getTime() : -Infinity;
+  return bd - ad;
+});
+
+/** 热门候选：SSR 骨架先占位，前端按阅读量重排 */
+const hotCandidates = latest.slice(0, 30);
+
+/** Tags 聚合 */
+const tagMap = new Map<string, number>();
+for (const p of posts) { for (const t of p.tags ?? []) tagMap.set(t, (tagMap.get(t) ?? 0) + 1); }
+const allTags = [...tagMap.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([name, count]) => ({ name, count }));
+const PRIMARY_FILTER_TAGS = ["2026", "外贸新动态", "跨境物流", "汇率变动", "关税政策", "贸易数据", "跨境电商", "外贸数据"];
+function isUsefulHomeTag(name: string) {
+  const clean = name.trim();
+  return clean.length >= 2 && !/[?]{2,}/.test(clean) && !/^\d+届$/.test(clean) && !/^(news|301关税)$/i.test(clean);
+}
+function getDisplayTags(tags: string[] = []) {
+  return tags.filter(isUsefulHomeTag);
+}
+const curatedTags = PRIMARY_FILTER_TAGS
+  .map((name) => allTags.find((tag) => tag.name === name))
+  .filter(Boolean) as typeof allTags;
+const filterTags = [
+  ...curatedTags,
+  ...allTags.filter((tag) => !PRIMARY_FILTER_TAGS.includes(tag.name) && isUsefulHomeTag(tag.name)).slice(0, 8),
+].slice(0, 8);
+
+function readingTime(post: typeof posts[number]): number {
+  const chars = (post.title?.length || 0) + (post.summary?.length || 0);
+  // Chinese ~400 chars/min; summary is roughly 1/5~1/6 of full article
+  const estimated = chars > 80 ? Math.round(chars * 5 / 400) : 1;
+  return Math.max(1, Math.min(estimated, 20));
+}
+
+const canonicalURL = new URL(Astro.url.pathname, SITE_URL).toString();
+const pageDescription = "外贸情报局面向外贸从业者，提供外贸客户开发、海关数据、跨境物流、汇率结算、外贸软件和 AI 工具相关的实战文章与效率工具。";
+const latestFour = latest.slice(0, 4).map((post) => post.title).join("、");
+const homeTitle = `${SITE_TITLE} - 外贸知识、客户开发、数据分析与工具实战`;
+const homeMetaDescription = `外贸情报局（${SITE_URL}）整理最新外贸文章，如${latestFour}，覆盖外贸客户开发、海关数据、跨境物流、外贸软件和 AI 工具。`;
+const itemListSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: `${SITE_TITLE} - 外贸知识、客户开发、数据分析与工具实战`,
+  description: pageDescription,
+  url: canonicalURL,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: latest.length,
+    itemListElement: latest.slice(0, 10).map((post, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: new URL(`/posts/${post.slug}`, SITE_URL).toString(),
+      name: post.title,
+      description: post.summary || post.title,
+    })),
+  },
+};
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_TITLE,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  inLanguage: "zh-CN",
+  publisher: {
+    "@type": "Organization",
+    name: SITE_TITLE,
+    url: SITE_URL,
+    logo: `${SITE_URL}/favicon.ico`,
+    sameAs: [
+      "https://cccy.xx.kg",
+    ],
+  },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={homeTitle}
+      description={homeMetaDescription}
+      canonical={canonicalURL}
+      structuredData={{
+        "@context": "https://schema.org",
+        "@graph": [websiteSchema, itemListSchema],
+      }}
+    />
+  </head>
+
+  <body class="ln ln-home">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader active="home" context={`${posts.length} 篇文章`} />
+
+    <main class="ln-wrap">
+      <!-- HERO：短介绍 + 搜索 -->
+      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+        <div class="ln-kicker">外贸增长 · 客户开发 · 软件工具</div>
+        <h1 class="ln-h1">外贸情报局</h1>
+        <p class="ln-sub">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
+        <div class="ln-controls ln-reveal" style="margin-top:16px;">
+          <div class="ln-search" role="search">
+            <span class="ln-ico">⌕</span>
+            <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
+            <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 专题入口 -->
+      <section class="ln-section ln-reveal" aria-label="Topic shortcuts">
+        <div class="ln-section-head">
+            <h2 class="ln-section-title">专题入口</h2>
+            <div class="ln-section-meta">按方向进入</div>
+        </div>
+        <div class="ln-topic-grid">
+          {TOPICS.map((topic) => (
+            <a class="ln-topic" href={`/topics/${topic.slug}`} data-topic-query={topic.query}>
+              <span class="ln-topic-name">{topic.name}</span>
+              <span class="ln-topic-desc">{topic.desc}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- 热门文章：骨架始终占位，避免布局跳动 -->
+      <section class="ln-section ln-reveal" id="hotSection" aria-label="Hot posts">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">热门文章</h2>
+          <div class="ln-section-meta" id="hotMeta">按阅读量排序</div>
+        </div>
+        <div class="ln-hot-grid" id="hotGrid">
+          {hotCandidates.slice(0, 6).map((p, i) => (
+            <a class="ln-hot-card" href={`/posts/${p.slug}`} data-slug={p.slug} data-title={p.title} data-date={p.date || ""} data-summary={p.summary || ""}>
+              <span class="ln-hot-rank">{i + 1}</span>
+              <span class="ln-hot-main">
+                <span class="ln-hot-title">{p.title}</span>
+                <span class="ln-hot-meta">
+                  <span class="ln-hot-views" data-views-for={p.slug}>阅读 --</span>
+                  {p.date ? <span class="ln-dot">·</span> : null}
+                  {p.date ? <span>{p.date}</span> : null}
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- 全部文章：筛选贴在列表上方 -->
+      <section class="ln-glass ln-reveal" aria-label="posts glass" id="listRoot">
+        <div class="ln-glass-head">
+          <div>
+            <div class="ln-glass-title">全部文章</div>
+            <div class="ln-glass-meta">共 <span id="countText">{latest.length}</span> 篇</div>
+          </div>
+          <div class="ln-glass-right">
+            <button class="ln-chip" id="resetBtn" type="button">重置筛选</button>
+          </div>
+        </div>
+        <div class="ln-list-filters ln-reveal" id="listFilters">
+          <div class="ln-filter">
+            <button class="ln-pill active" type="button" data-tag="__all">全部</button>
+            <div class="ln-pill-wrap" id="pillWrap">
+              {filterTags.map((t) => (
+                <button class="ln-pill" type="button" data-tag={t.name} title={`${t.count} 篇文章`}>{t.name}</button>
+              ))}
+              <button class="ln-pill ln-pill-more" id="pillMore" type="button" aria-expanded="false">更多</button>
+            </div>
+          </div>
+        </div>
+        <div class="ln-feed">
+          {latest.map((p) => (
+            <article class="ln-feed-item">
+              <a href={`/posts/${p.slug}`} data-title={p.title} data-summary={p.summary} data-tags={getDisplayTags(p.tags).join(",")}>
+              {p.cover ? (
+                <span class="ln-feed-thumb" aria-hidden="true">
+                  <img src={p.cover} alt={p.title} width="160" height="100" loading="lazy" decoding="async" />
+                </span>
+              ) : null}
+              <span class="ln-feed-main">
+                <span class="ln-feed-meta">
+                  <span>{p.date || "—"}</span>
+                  <span class="ln-dot">·</span>
+                  <span class="ln-feed-read">约 {readingTime(p)} 分钟</span>
+                  {getDisplayTags(p.tags).length > 0 ? <span class="ln-dot">·</span> : null}
+                  {getDisplayTags(p.tags).length > 0 ? <span>{getDisplayTags(p.tags).slice(0, 3).join(" · ")}</span> : null}
+                </span>
+                <span class="ln-feed-title">{p.title}</span>
+                <span class="ln-feed-summary">{p.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
+              </span>
+              <span class="ln-feed-arrow" aria-hidden="true">→</span>
+              </a>
+            </article>
+          ))}
+        </div>
+        <nav class="ln-pagination" id="pagination" aria-label="Article pagination">
+          <div class="ln-page-meta" id="pageMeta"></div>
+          <div class="ln-page-controls">
+            <button class="ln-page-btn" id="pagePrev" type="button" aria-label="Previous page">Prev</button>
+            <div class="ln-page-numbers" id="pageNumbers"></div>
+            <button class="ln-page-btn" id="pageNext" type="button" aria-label="Next page">Next</button>
+          </div>
+        </nav>
+        <!-- EMPTY STATE -->
+        <div class="ln-empty" id="emptyState" hidden>
+          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+          <div class="ln-empty-title">没有找到结果</div>
+          <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
+          <div class="ln-empty-actions">
+            <button class="ln-btn" type="button" id="emptyReset">重置筛选</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="ln-reveal" style="padding: 0 20px; max-width: 600px; margin: 0 auto;">
+        
+      <script type="application/json" id="hotSeed" set:html={JSON.stringify(hotCandidates.map((p) => ({ slug: p.slug, title: p.title, date: p.date || "", summary: p.summary || "" })))}></script>
+
+      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+      </div>
+
+      <footer class="ln-foot ln-reveal">
+        <span>© {new Date().getFullYear()} 外贸情报局</span>
+        <span class="ln-dot">·</span>
+        <span class="ln-muted">内容持续更新</span>
+      </footer>
+    </main>
+
+    <script>
+      import Fuse from "fuse.js";
+
+      // =========================
+      // Theme
+      // =========================
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+
+      // =========================
+      // Reveal animations
+      // =========================
+      const revealEls = Array.from(document.querySelectorAll(".ln-reveal"));
+      if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("reveal-ready");
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add("in");
+              io.unobserve(e.target);
+            }
+          }
+        }, { threshold: 0.08 });
+        revealEls.forEach(el => io.observe(el));
+      } else {
+        revealEls.forEach(el => el.classList.add("in"));
+      }
+
+      // =========================
+      // Tag pills collapse + More
+      // =========================
+      const pillWrap = document.getElementById("pillWrap");
+      const moreBtn = document.getElementById("pillMore");
+      const pills = Array.from(pillWrap.querySelectorAll(".ln-pill")).filter(p => !p.classList.contains("ln-pill-more"));
+      const MAX_PILLS = 6;
+      function applyPillCollapse() {
+        const isExpanded = moreBtn.getAttribute("aria-expanded") === "true";
+        pills.forEach((p, i) => { p.style.display = (!isExpanded && i >= MAX_PILLS) ? "none" : "inline-flex"; });
+        moreBtn.style.display = pills.length > MAX_PILLS ? "inline-flex" : "none";
+        moreBtn.innerText = moreBtn.getAttribute("aria-expanded") === "true" ? "收起" : "更多";
+      }
+      moreBtn.addEventListener("click", () => {
+        const expanded = moreBtn.getAttribute("aria-expanded") === "true";
+        moreBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
+        applyPillCollapse();
+      });
+      applyPillCollapse();
+
+      // =========================
+      // Fuse.js search + tag filter
+      // =========================
+      (function() {
+        const PAGE_SIZE = 10;
+        const displayItems = Array.from(document.querySelectorAll("#listRoot .ln-feed-item"));
+        const articleMap = new Map();
+
+        for (const el of displayItems) {
+          const link = el.querySelector("a[data-title]");
+          const href = link?.getAttribute("href") || "";
+          if (!href) continue;
+          if (!articleMap.has(href)) {
+            articleMap.set(href, {
+              href,
+              title: link.dataset.title || "",
+              summary: link.dataset.summary || "",
+              tags: (link.dataset.tags || "").split(",").filter(Boolean),
+              els: [],
+            });
+          }
+          articleMap.get(href).els.push(el);
+        }
+
+        const searchData = Array.from(articleMap.values());
+
+        const fuse = new Fuse(searchData, {
+          keys: [
+            { name: "title", weight: 0.5 },
+            { name: "tags", weight: 0.3 },
+            { name: "summary", weight: 0.2 },
+          ],
+          threshold: 0.35,
+          ignoreLocation: true,
+          minMatchCharLength: 1,
+        });
+
+        const searchInput = document.getElementById("searchInput");
+        const clearSearch = document.getElementById("clearSearch");
+        const resetBtn = document.getElementById("resetBtn");
+        const emptyState = document.getElementById("emptyState");
+        const emptyReset = document.getElementById("emptyReset");
+        const countText = document.getElementById("countText");
+        const pagination = document.getElementById("pagination");
+        const pageMeta = document.getElementById("pageMeta");
+        const pagePrev = document.getElementById("pagePrev");
+        const pageNext = document.getElementById("pageNext");
+        const pageNumbers = document.getElementById("pageNumbers");
+        const tagBtns = Array.from(document.querySelectorAll(".ln-pill[data-tag]"));
+
+        let activeTag = "__all";
+        let currentPage = 1;
+        let filteredItems = searchData;
+        let currentQuery = "";
+
+        function escapeHtml(value) {
+          return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+        }
+
+        function escapeRegExp(value) {
+          return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        function highlightText(value, query) {
+          const clean = String(value ?? "");
+          if (!query) return escapeHtml(clean);
+          const terms = query.split(/\s+/).filter(Boolean).slice(0, 4);
+          if (!terms.length) return escapeHtml(clean);
+          const re = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+          return escapeHtml(clean).replace(re, '<mark class="ln-hit">$1</mark>');
+        }
+
+        function applyHighlights(query) {
+          for (const item of searchData) {
+            for (const el of item.els) {
+              const titleEl = el.querySelector(".ln-feed-title");
+              const summaryEl = el.querySelector(".ln-feed-summary");
+              if (titleEl) titleEl.innerHTML = highlightText(item.title, query);
+              if (summaryEl) summaryEl.innerHTML = highlightText(item.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。", query);
+            }
+          }
+        }
+
+        function setActiveTag(tag) {
+          activeTag = tag;
+          tagBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tag === tag));
+        }
+
+        function getPageList(totalPages) {
+          if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+          const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+          const sorted = Array.from(pages).filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+          const out = [];
+          for (const p of sorted) {
+            const last = out[out.length - 1];
+            if (last && p - last > 1) out.push("...");
+            out.push(p);
+          }
+          return out;
+        }
+
+        function renderPagination(total, totalPages) {
+          if (total === 0) {
+            pagination.hidden = true;
+            return;
+          }
+
+          const start = (currentPage - 1) * PAGE_SIZE + 1;
+          const end = Math.min(currentPage * PAGE_SIZE, total);
+          pagination.hidden = false;
+          pageMeta.textContent = `显示第 ${start}-${end} 篇，共 ${total} 篇`;
+          pagePrev.disabled = currentPage <= 1;
+          pageNext.disabled = currentPage >= totalPages;
+          pageNumbers.innerHTML = getPageList(totalPages).map((page) => {
+            if (page === "...") return `<span class="ln-page-gap" aria-hidden="true">...</span>`;
+            const isCurrent = page === currentPage;
+            return `<button class="ln-page-num${isCurrent ? " active" : ""}" type="button" data-page="${page}" ${isCurrent ? 'aria-current="page"' : ""}>${page}</button>`;
+          }).join("");
+        }
+
+        function renderPage(scroll = false) {
+          const total = filteredItems.length;
+          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+          currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+          displayItems.forEach(el => el.style.display = "none");
+          filteredItems
+            .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+            .forEach(item => item.els.forEach(el => el.style.display = ""));
+          applyHighlights(currentQuery);
+
+          countText.textContent = String(total);
+          emptyState.hidden = total > 0;
+          renderPagination(total, totalPages);
+
+          if (scroll) {
+            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+
+        function applyFilter(resetPage = true) {
+          const q = (searchInput.value || "").toLowerCase().trim();
+          currentQuery = q;
+          let matches;
+
+          if (fuse && q) {
+            matches = fuse.search(q).map(r => r.item);
+          } else {
+            // fallback: simple includes (also used when Fuse not loaded)
+            matches = searchData.filter(item => {
+              const title = (item.title || "").toLowerCase();
+              const summary = (item.summary || "").toLowerCase();
+              const tags = item.tags.join(",").toLowerCase();
+              return !q || title.includes(q) || summary.includes(q) || tags.includes(q);
+            });
+          }
+
+          filteredItems = matches.filter(item =>
+            activeTag === "__all" ||
+            item.tags.some(t => t.toLowerCase() === activeTag.toLowerCase())
+          );
+          if (resetPage) currentPage = 1;
+          renderPage();
+        }
+
+        tagBtns.forEach(btn => {
+          btn.addEventListener("click", () => {
+            setActiveTag(btn.dataset.tag);
+            applyFilter(true);
+            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+        let searchScrollTimer = 0;
+        searchInput.addEventListener("input", () => {
+          applyFilter(true);
+          const q = (searchInput.value || "").trim();
+          if (!q) return;
+          window.clearTimeout(searchScrollTimer);
+          searchScrollTimer = window.setTimeout(() => {
+            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 280);
+        });
+        clearSearch.addEventListener("click", () => { searchInput.value = ""; applyFilter(true); searchInput.focus(); });
+        pagePrev.addEventListener("click", () => { currentPage -= 1; renderPage(true); });
+        pageNext.addEventListener("click", () => { currentPage += 1; renderPage(true); });
+        pageNumbers.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-page]");
+          if (!btn) return;
+          currentPage = Number(btn.dataset.page || 1);
+          renderPage(true);
+        });
+        function resetAll() {
+          setActiveTag("__all");
+          searchInput.value = "";
+          moreBtn.setAttribute("aria-expanded", "false");
+          applyPillCollapse();
+          applyFilter(true);
+        }
+        resetBtn.addEventListener("click", resetAll);
+        emptyReset.addEventListener("click", resetAll);
+
+        // =========================
+        // Parallax
+        // =========================
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!reduce) {
+          let raf = 0;
+          window.addEventListener("scroll", () => {
+            if (raf) return;
+            raf = requestAnimationFrame(() => {
+              raf = 0;
+              const y = window.scrollY || 0;
+              document.documentElement.style.setProperty("--parallaxY", (y * 0.08).toFixed(2) + "px");
+            });
+          }, { passive: true });
+          document.documentElement.style.setProperty("--parallaxY", "0px");
+        }
+
+        // initial
+        applyFilter();
+
+      })();
+    
+
+      // ===== Hot posts by views =====
+      (async () => {
+        const section = document.getElementById("hotSection");
+        const grid = document.getElementById("hotGrid");
+        if (!section || !grid) return;
+
+        const cards = Array.from(grid.querySelectorAll(".ln-hot-card"));
+        // Prefer data from all hot candidates embedded below
+        const seed = document.getElementById("hotSeed");
+        let items = [];
+        try {
+          items = seed ? JSON.parse(seed.textContent || "[]") : [];
+        } catch {
+          items = [];
+        }
+        if (!items.length) {
+          items = cards.map((card) => ({
+            slug: card.getAttribute("data-slug") || "",
+            title: card.getAttribute("data-title") || "",
+            date: card.getAttribute("data-date") || "",
+            summary: card.getAttribute("data-summary") || "",
+          }));
+        }
+        items = items.filter((it) => it.slug);
+        if (!items.length) return;
+
+        const slugs = items.map((it) => it.slug);
+        try {
+          // batch in chunks of 20 to avoid long URLs
+          const chunks = [];
+          for (let i = 0; i < slugs.length; i += 20) chunks.push(slugs.slice(i, i + 20));
+          const map = new Map();
+          for (const chunk of chunks) {
+            const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(","))}`, {
+              headers: { Accept: "application/json" },
+            });
+            if (!res.ok) continue;
+            const data = await res.json();
+            for (const it of data.items || []) {
+              map.set(it.slug, Number(it.count) || 0);
+            }
+          }
+
+          const ranked = items
+            .map((it) => ({ ...it, views: map.get(it.slug) || 0 }))
+            .sort((a, b) => b.views - a.views || String(b.date).localeCompare(String(a.date)))
+            .slice(0, 6);
+
+          grid.innerHTML = ranked
+            .map((it, idx) => {
+              const dateHtml = it.date ? `<span class="ln-dot">·</span><span>${it.date}</span>` : "";
+              return `<a class="ln-hot-card" href="/posts/${it.slug}">
+                <span class="ln-hot-rank">${idx + 1}</span>
+                <span class="ln-hot-main">
+                  <span class="ln-hot-title">${escapeHtml(it.title)}</span>
+                  <span class="ln-hot-meta">
+                    <span class="ln-hot-views">阅读 ${it.views}</span>
+                    ${dateHtml}
+                  </span>
+                </span>
+              </a>`;
+            })
+            .join("");
+
+          if (document.getElementById("hotMeta")) {
+            document.getElementById("hotMeta").textContent = "按阅读量排序";
+          }
+        } catch {
+          // 保留 SSR 骨架，避免空白跳动
+        }
+
+        function escapeHtml(s) {
+          return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+      })();
+
+</script>
+  </body>
+</html>

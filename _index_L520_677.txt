@@ -1,0 +1,158 @@
+520|
+521|          if (scroll) {
+522|            document.getElementById("listRoot")?.scrollIntoView({ behavior: "smooth", block: "start" });
+523|          }
+524|        }
+525|
+526|        function applyFilter(resetPage = true) {
+527|          const q = (searchInput.value || "").toLowerCase().trim();
+528|          currentQuery = q;
+529|          let matches;
+530|
+531|          if (fuse && q) {
+532|            matches = fuse.search(q).map(r => r.item);
+533|          } else {
+534|            // fallback: simple includes (also used when Fuse not loaded)
+535|            matches = searchData.filter(item => {
+536|              const title = (item.title || "").toLowerCase();
+537|              const summary = (item.summary || "").toLowerCase();
+538|              const tags = item.tags.join(",").toLowerCase();
+539|              return !q || title.includes(q) || summary.includes(q) || tags.includes(q);
+540|            });
+541|          }
+542|
+543|          filteredItems = matches.filter(item =>
+544|            activeTag === "__all" ||
+545|            item.tags.some(t => t.toLowerCase() === activeTag.toLowerCase())
+546|          );
+547|          if (resetPage) currentPage = 1;
+548|          renderPage();
+549|        }
+550|
+551|        tagBtns.forEach(btn => {
+552|          btn.addEventListener("click", () => { setActiveTag(btn.dataset.tag); applyFilter(true); });
+553|        });
+554|        searchInput.addEventListener("input", () => applyFilter(true));
+555|        clearSearch.addEventListener("click", () => { searchInput.value = ""; applyFilter(true); searchInput.focus(); });
+556|        pagePrev.addEventListener("click", () => { currentPage -= 1; renderPage(true); });
+557|        pageNext.addEventListener("click", () => { currentPage += 1; renderPage(true); });
+558|        pageNumbers.addEventListener("click", (event) => {
+559|          const btn = event.target.closest("[data-page]");
+560|          if (!btn) return;
+561|          currentPage = Number(btn.dataset.page || 1);
+562|          renderPage(true);
+563|        });
+564|        function resetAll() {
+565|          setActiveTag("__all");
+566|          searchInput.value = "";
+567|          moreBtn.setAttribute("aria-expanded", "false");
+568|          applyPillCollapse();
+569|          applyFilter(true);
+570|        }
+571|        resetBtn.addEventListener("click", resetAll);
+572|        emptyReset.addEventListener("click", resetAll);
+573|
+574|        // =========================
+575|        // Parallax
+576|        // =========================
+577|        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+578|        if (!reduce) {
+579|          let raf = 0;
+580|          window.addEventListener("scroll", () => {
+581|            if (raf) return;
+582|            raf = requestAnimationFrame(() => {
+583|              raf = 0;
+584|              const y = window.scrollY || 0;
+585|              document.documentElement.style.setProperty("--parallaxY", (y * 0.08).toFixed(2) + "px");
+586|            });
+587|          }, { passive: true });
+588|          document.documentElement.style.setProperty("--parallaxY", "0px");
+589|        }
+590|
+591|        // initial
+592|        applyFilter();
+593|
+594|      })();
+595|    
+596|
+597|      // ===== Hot posts by views =====
+598|      (async () => {
+599|        const section = document.getElementById("hotSection");
+600|        const grid = document.getElementById("hotGrid");
+601|        if (!section || !grid) return;
+602|
+603|        const cards = Array.from(grid.querySelectorAll(".ln-hot-card"));
+604|        // Prefer data from all hot candidates embedded below
+605|        const seed = document.getElementById("hotSeed");
+606|        let items = [];
+607|        try {
+608|          items = seed ? JSON.parse(seed.textContent || "[]") : [];
+609|        } catch {
+610|          items = [];
+611|        }
+612|        if (!items.length) {
+613|          items = cards.map((card) => ({
+614|            slug: card.getAttribute("data-slug") || "",
+615|            title: card.getAttribute("data-title") || "",
+616|            date: card.getAttribute("data-date") || "",
+617|            summary: card.getAttribute("data-summary") || "",
+618|          }));
+619|        }
+620|        items = items.filter((it) => it.slug);
+621|        if (!items.length) return;
+622|
+623|        const slugs = items.map((it) => it.slug);
+624|        try {
+625|          // batch in chunks of 20 to avoid long URLs
+626|          const chunks = [];
+627|          for (let i = 0; i < slugs.length; i += 20) chunks.push(slugs.slice(i, i + 20));
+628|          const map = new Map();
+629|          for (const chunk of chunks) {
+630|            const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(","))}`, {
+631|              headers: { Accept: "application/json" },
+632|            });
+633|            if (!res.ok) continue;
+634|            const data = await res.json();
+635|            for (const it of data.items || []) {
+636|              map.set(it.slug, Number(it.count) || 0);
+637|            }
+638|          }
+639|
+640|          const ranked = items
+641|            .map((it) => ({ ...it, views: map.get(it.slug) || 0 }))
+642|            .sort((a, b) => b.views - a.views || String(b.date).localeCompare(String(a.date)))
+643|            .slice(0, 6);
+644|
+645|          grid.innerHTML = ranked
+646|            .map((it, idx) => {
+647|              const dateHtml = it.date ? `<span class="ln-dot">·</span><span>${it.date}</span>` : "";
+648|              return `<a class="ln-hot-card" href="/posts/${it.slug}">
+649|                <span class="ln-hot-rank">${idx + 1}</span>
+650|                <span class="ln-hot-main">
+651|                  <span class="ln-hot-title">${escapeHtml(it.title)}</span>
+652|                  <span class="ln-hot-meta">
+653|                    <span class="ln-hot-views">阅读 ${it.views}</span>
+654|                    ${dateHtml}
+655|                  </span>
+656|                </span>
+657|              </a>`;
+658|            })
+659|            .join("");
+660|
+661|          section.hidden = false;
+662|        } catch {
+663|          section.hidden = false;
+664|        }
+665|
+666|        function escapeHtml(s) {
+667|          return String(s || "")
+668|            .replace(/&/g, "&amp;")
+669|            .replace(/</g, "&lt;")
+670|            .replace(/>/g, "&gt;")
+671|            .replace(/"/g, "&quot;");
+672|        }
+673|      })();
+674|
+675|</script>
+676|  </body>
+677|</html>

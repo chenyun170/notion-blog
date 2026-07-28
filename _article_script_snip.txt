@@ -1,0 +1,218 @@
+<script>
+      // ===== Theme =====
+      const root = document.documentElement;
+      const key = "theme";
+      const saved = localStorage.getItem(key);
+      if (saved === "dark") root.classList.add("dark");
+      if (saved === "light") root.classList.remove("dark");
+
+      const btn = document.getElementById("themeToggle");
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      btn?.addEventListener("click", () => {
+        root.classList.toggle("dark");
+        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+      });
+
+      // ===== Progress =====
+      const bar = document.getElementById("progressBar");
+      const calc = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        const v = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+        if (bar) bar.style.width = v.toFixed(2) + "%";
+      };
+      calc();
+      window.addEventListener("scroll", calc, { passive: true });
+
+      // ===== TOC Active (IntersectionObserver, 更稳) =====
+      const tocLinks = Array.from(document.querySelectorAll(".ln-toc a"));
+      const headings = tocLinks
+        .map((a) => document.getElementById(a.getAttribute("href")?.slice(1) || ""))
+        .filter(Boolean);
+
+      const setActive = (id) => {
+        tocLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
+      };
+
+      if ("IntersectionObserver" in window && headings.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            const visible = entries.filter((e) => e.isIntersecting);
+            if (!visible.length) return;
+            // 取最靠上的那个?
+            visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            setActive(visible[0].target.id);
+          },
+          { rootMargin: "-120px 0px -70% 0px", threshold: [0, 1] }
+        );
+        headings.forEach((h) => io.observe(h));
+      } else {
+        const onScroll = () => {
+          let active = -1;
+          for (let i = 0; i < headings.length; i++) {
+            const el = headings[i];
+            const top = el.getBoundingClientRect().top;
+            if (top <= 120) active = i;
+          }
+          const id = headings[active]?.id;
+          if (id) setActive(id);
+        };
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+      }
+
+      // scroll to top button + percent
+  const topBtn = document.getElementById("toTop");
+  const num = document.getElementById("toTopNum");
+
+  const updateTopBtn = () => {
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+
+    const y = window.scrollY || doc.scrollTop || 0;
+    const pct = max <= 0 ? 0 : Math.round((y / max) * 100);
+
+    if (num) num.textContent = String(pct);
+
+    if (topBtn) topBtn.classList.toggle("show", y > 520);
+  };
+
+  updateTopBtn();
+  window.addEventListener("scroll", updateTopBtn, { passive: true });
+
+  topBtn?.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+      // ESC hides focus (optional)
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") (topBtn instanceof HTMLElement) && topBtn.blur();
+      });
+
+      // ===== Ultra Lightbox (images in article) =====
+      const prose = document.getElementById("prose");
+      const lightbox = document.getElementById("lightbox");
+      const lbImg = document.getElementById("lbImg");
+      const lbClose = document.getElementById("lbClose");
+      const lbPrev = document.getElementById("lbPrev");
+      const lbNext = document.getElementById("lbNext");
+      const lbIndex = document.getElementById("lbIndex");
+      const lbTotal = document.getElementById("lbTotal");
+
+      let imgs = [];
+      let current = 0;
+
+      const lockBody = (on) => {
+        document.body.classList.toggle("lb-lock", on);
+      };
+
+      const openLB = (idx) => {
+        if (!lightbox || !lbImg) return;
+        current = idx;
+        const src = imgs[current]?.src;
+        if (!src) return;
+
+        lbImg.src = src;
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
+        lockBody(true);
+
+        if (lbIndex) lbIndex.textContent = String(current + 1);
+        if (lbTotal) lbTotal.textContent = String(imgs.length);
+
+        // nav show/hide（只有一张图时隐藏）
+        if (lbPrev) lbPrev.style.display = imgs.length > 1 ? "flex" : "none";
+        if (lbNext) lbNext.style.display = imgs.length > 1 ? "flex" : "none";
+      };
+
+      const closeLB = () => {
+        if (!lightbox || !lbImg) return;
+        lightbox.classList.remove("open");
+        lightbox.setAttribute("aria-hidden", "true");
+        lockBody(false);
+        // 清空，避免大图常驻占内存
+        lbImg.src = "";
+      };
+
+      const show = (idx) => {
+        if (!lbImg) return;
+        current = (idx + imgs.length) % imgs.length;
+        lbImg.src = imgs[current].src;
+        if (lbIndex) lbIndex.textContent = String(current + 1);
+      };
+
+      // 收集文章内图片（Notion image block -> .n-figure img）?
+      const collect = () => {
+        imgs = Array.from(document.querySelectorAll(".ln-prose .n-figure img"));
+        imgs.forEach((img, idx) => {
+          img.addEventListener("click", (e) => {
+            e.preventDefault();
+            openLB(idx);
+          });
+        });
+      };
+      collect();
+
+      // 点击遮罩关闭（点图片不关闭）
+      lightbox?.addEventListener("click", () => closeLB());
+      lbImg?.addEventListener("click", (e) => e.stopPropagation());
+      lbClose?.addEventListener("click", (e) => { e.stopPropagation(); closeLB(); });
+
+      // 左右切换
+      lbPrev?.addEventListener("click", (e) => { e.stopPropagation(); show(current - 1); });
+      lbNext?.addEventListener("click", (e) => { e.stopPropagation(); show(current + 1); });
+
+      // 键盘：ESC/左右箭头?
+      window.addEventListener("keydown", (e) => {
+        if (!lightbox?.classList.contains("open")) return;
+        if (e.key === "Escape") closeLB();
+        if (e.key === "ArrowLeft") show(current - 1);
+        if (e.key === "ArrowRight") show(current + 1);
+      });
+
+      // 触控滑动（移动端）?
+      let sx = 0, sy = 0, touching = false;
+      lightbox?.addEventListener("touchstart", (e) => {
+        if (!lightbox.classList.contains("open")) return;
+        touching = true;
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+      }, { passive: true });
+
+      lightbox?.addEventListener("touchend", (e) => {
+        if (!touching || !lightbox.classList.contains("open")) return;
+        touching = false;
+        const ex = e.changedTouches[0].clientX;
+        const ey = e.changedTouches[0].clientY;
+        const dx = ex - sx;
+        const dy = ey - sy;
+
+        // 横向为主才切图，避免上下滑误触?
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0) show(current - 1);
+          else show(current + 1);
+        }
+      }, { passive: true });
+
+      // --- Share: copy link / wechat ---
+      const shareCopy = document.getElementById("shareCopy");
+      const shareWechat = document.getElementById("shareWechat");
+      shareCopy?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          shareCopy.textContent = "✅ 已复制";
+          setTimeout(() => { shareCopy.textContent = "🔗 复制链接"; }, 2000);
+        } catch {
+          shareCopy.textContent = "❌ 复制失败";
+          setTimeout(() => { shareCopy.textContent = "🔗 复制链接"; }, 2000);
+        }
+      });
+      shareWechat?.addEventListener("click", () => {
+        alert("微信分享：请复制链接后粘贴到微信聊天或朋友圈。\n\n" + location.href);
+      });
+
+      // --- Copy points / full text ---
+      const flashBtn = (btn, okText, resetText) => {
+        if (!btn) return;
+        btn.text

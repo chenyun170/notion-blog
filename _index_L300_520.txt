@@ -1,0 +1,221 @@
+300|        <!-- EMPTY STATE -->
+301|        <div class="ln-empty" id="emptyState" hidden>
+302|          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+303|          <div class="ln-empty-title">没有找到结果</div>
+304|          <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
+305|          <div class="ln-empty-actions">
+306|            <button class="ln-btn" type="button" id="emptyReset">重置筛选</button>
+307|          </div>
+308|        </div>
+309|      </section>
+310|
+311|      <div class="ln-reveal" style="padding: 0 20px; max-width: 600px; margin: 0 auto;">
+312|        
+313|      <script type="application/json" id="hotSeed" set:html={JSON.stringify(hotCandidates.map((p) => ({ slug: p.slug, title: p.title, date: p.date || "", summary: p.summary || "" })))}></script>
+314|
+315|      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+316|      </div>
+317|
+318|      <footer class="ln-foot ln-reveal">
+319|        <span>© {new Date().getFullYear()} 外贸情报局</span>
+320|        <span class="ln-dot">·</span>
+321|        <span class="ln-muted">内容持续更新</span>
+322|      </footer>
+323|    </main>
+324|
+325|    <script>
+326|      import Fuse from "fuse.js";
+327|
+328|      // =========================
+329|      // Theme
+330|      // =========================
+331|      const root = document.documentElement;
+332|      const key = "theme";
+333|      const saved = localStorage.getItem(key);
+334|      const btn = document.getElementById("themeToggle");
+335|      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
+336|      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+337|      btn?.addEventListener("click", () => {
+338|        root.classList.toggle("dark");
+339|        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+340|        localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
+341|      });
+342|
+343|      // =========================
+344|      // Reveal animations
+345|      // =========================
+346|      const revealEls = Array.from(document.querySelectorAll(".ln-reveal"));
+347|      if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+348|        document.documentElement.classList.add("reveal-ready");
+349|        const io = new IntersectionObserver((entries) => {
+350|          for (const e of entries) {
+351|            if (e.isIntersecting) {
+352|              e.target.classList.add("in");
+353|              io.unobserve(e.target);
+354|            }
+355|          }
+356|        }, { threshold: 0.08 });
+357|        revealEls.forEach(el => io.observe(el));
+358|      } else {
+359|        revealEls.forEach(el => el.classList.add("in"));
+360|      }
+361|
+362|      // =========================
+363|      // Tag pills collapse + More
+364|      // =========================
+365|      const pillWrap = document.getElementById("pillWrap");
+366|      const moreBtn = document.getElementById("pillMore");
+367|      const pills = Array.from(pillWrap.querySelectorAll(".ln-pill")).filter(p => !p.classList.contains("ln-pill-more"));
+368|      const MAX_PILLS = 6;
+369|      function applyPillCollapse() {
+370|        const isExpanded = moreBtn.getAttribute("aria-expanded") === "true";
+371|        pills.forEach((p, i) => { p.style.display = (!isExpanded && i >= MAX_PILLS) ? "none" : "inline-flex"; });
+372|        moreBtn.style.display = pills.length > MAX_PILLS ? "inline-flex" : "none";
+373|        moreBtn.innerText = moreBtn.getAttribute("aria-expanded") === "true" ? "收起" : "更多";
+374|      }
+375|      moreBtn.addEventListener("click", () => {
+376|        const expanded = moreBtn.getAttribute("aria-expanded") === "true";
+377|        moreBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
+378|        applyPillCollapse();
+379|      });
+380|      applyPillCollapse();
+381|
+382|      // =========================
+383|      // Fuse.js search + tag filter
+384|      // =========================
+385|      (function() {
+386|        const PAGE_SIZE = 10;
+387|        const displayItems = Array.from(document.querySelectorAll("#listRoot .ln-feed-item"));
+388|        const articleMap = new Map();
+389|
+390|        for (const el of displayItems) {
+391|          const link = el.querySelector("a[data-title]");
+392|          const href = link?.getAttribute("href") || "";
+393|          if (!href) continue;
+394|          if (!articleMap.has(href)) {
+395|            articleMap.set(href, {
+396|              href,
+397|              title: link.dataset.title || "",
+398|              summary: link.dataset.summary || "",
+399|              tags: (link.dataset.tags || "").split(",").filter(Boolean),
+400|              els: [],
+401|            });
+402|          }
+403|          articleMap.get(href).els.push(el);
+404|        }
+405|
+406|        const searchData = Array.from(articleMap.values());
+407|
+408|        const fuse = new Fuse(searchData, {
+409|          keys: [
+410|            { name: "title", weight: 0.5 },
+411|            { name: "tags", weight: 0.3 },
+412|            { name: "summary", weight: 0.2 },
+413|          ],
+414|          threshold: 0.35,
+415|          ignoreLocation: true,
+416|          minMatchCharLength: 1,
+417|        });
+418|
+419|        const searchInput = document.getElementById("searchInput");
+420|        const clearSearch = document.getElementById("clearSearch");
+421|        const resetBtn = document.getElementById("resetBtn");
+422|        const emptyState = document.getElementById("emptyState");
+423|        const emptyReset = document.getElementById("emptyReset");
+424|        const countText = document.getElementById("countText");
+425|        const pagination = document.getElementById("pagination");
+426|        const pageMeta = document.getElementById("pageMeta");
+427|        const pagePrev = document.getElementById("pagePrev");
+428|        const pageNext = document.getElementById("pageNext");
+429|        const pageNumbers = document.getElementById("pageNumbers");
+430|        const tagBtns = Array.from(document.querySelectorAll(".ln-pill[data-tag]"));
+431|
+432|        let activeTag = "__all";
+433|        let currentPage = 1;
+434|        let filteredItems = searchData;
+435|        let currentQuery = "";
+436|
+437|        function escapeHtml(value) {
+438|          return String(value ?? "")
+439|            .replaceAll("&", "&amp;")
+440|            .replaceAll("<", "&lt;")
+441|            .replaceAll(">", "&gt;")
+442|            .replaceAll('"', "&quot;");
+443|        }
+444|
+445|        function escapeRegExp(value) {
+446|          return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+447|        }
+448|
+449|        function highlightText(value, query) {
+450|          const clean = String(value ?? "");
+451|          if (!query) return escapeHtml(clean);
+452|          const terms = query.split(/\s+/).filter(Boolean).slice(0, 4);
+453|          if (!terms.length) return escapeHtml(clean);
+454|          const re = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+455|          return escapeHtml(clean).replace(re, '<mark class="ln-hit">$1</mark>');
+456|        }
+457|
+458|        function applyHighlights(query) {
+459|          for (const item of searchData) {
+460|            for (const el of item.els) {
+461|              const titleEl = el.querySelector(".ln-feed-title");
+462|              const summaryEl = el.querySelector(".ln-feed-summary");
+463|              if (titleEl) titleEl.innerHTML = highlightText(item.title, query);
+464|              if (summaryEl) summaryEl.innerHTML = highlightText(item.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。", query);
+465|            }
+466|          }
+467|        }
+468|
+469|        function setActiveTag(tag) {
+470|          activeTag = tag;
+471|          tagBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tag === tag));
+472|        }
+473|
+474|        function getPageList(totalPages) {
+475|          if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+476|          const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+477|          const sorted = Array.from(pages).filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+478|          const out = [];
+479|          for (const p of sorted) {
+480|            const last = out[out.length - 1];
+481|            if (last && p - last > 1) out.push("...");
+482|            out.push(p);
+483|          }
+484|          return out;
+485|        }
+486|
+487|        function renderPagination(total, totalPages) {
+488|          if (total === 0) {
+489|            pagination.hidden = true;
+490|            return;
+491|          }
+492|
+493|          const start = (currentPage - 1) * PAGE_SIZE + 1;
+494|          const end = Math.min(currentPage * PAGE_SIZE, total);
+495|          pagination.hidden = false;
+496|          pageMeta.textContent = `显示第 ${start}-${end} 篇，共 ${total} 篇`;
+497|          pagePrev.disabled = currentPage <= 1;
+498|          pageNext.disabled = currentPage >= totalPages;
+499|          pageNumbers.innerHTML = getPageList(totalPages).map((page) => {
+500|            if (page === "...") return `<span class="ln-page-gap" aria-hidden="true">...</span>`;
+501|            const isCurrent = page === currentPage;
+502|            return `<button class="ln-page-num${isCurrent ? " active" : ""}" type="button" data-page="${page}" ${isCurrent ? 'aria-current="page"' : ""}>${page}</button>`;
+503|          }).join("");
+504|        }
+505|
+506|        function renderPage(scroll = false) {
+507|          const total = filteredItems.length;
+508|          const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+509|          currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+510|
+511|          displayItems.forEach(el => el.style.display = "none");
+512|          filteredItems
+513|            .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+514|            .forEach(item => item.els.forEach(el => el.style.display = ""));
+515|          applyHighlights(currentQuery);
+516|
+517|          countText.textContent = String(total);
+518|          emptyState.hidden = total > 0;
+519|          renderPagination(total, totalPages);
+520|

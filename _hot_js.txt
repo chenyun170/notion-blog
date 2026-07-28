@@ -1,0 +1,102 @@
+471|        if (!reduce) {
+472|          let raf = 0;
+473|          window.addEventListener("scroll", () => {
+474|            if (raf) return;
+475|            raf = requestAnimationFrame(() => {
+476|              raf = 0;
+477|              const y = window.scrollY || 0;
+478|              document.documentElement.style.setProperty("--parallaxY", (y * 0.08).toFixed(2) + "px");
+479|            });
+480|          }, { passive: true });
+481|          document.documentElement.style.setProperty("--parallaxY", "0px");
+482|        }
+483|
+484|        // initial
+485|        applyFilter();
+486|
+487|      })();
+488|    
+489|
+490|      // ===== Hot posts by views =====
+491|      (async () => {
+492|        const section = document.getElementById("hotSection");
+493|        const grid = document.getElementById("hotGrid");
+494|        if (!section || !grid) return;
+495|
+496|        const cards = Array.from(grid.querySelectorAll(".ln-hot-card"));
+497|        // Prefer data from all hot candidates embedded below
+498|        const seed = document.getElementById("hotSeed");
+499|        let items = [];
+500|        try {
+501|          items = seed ? JSON.parse(seed.textContent || "[]") : [];
+502|        } catch {
+503|          items = [];
+504|        }
+505|        if (!items.length) {
+506|          items = cards.map((card) => ({
+507|            slug: card.getAttribute("data-slug") || "",
+508|            title: card.getAttribute("data-title") || "",
+509|            date: card.getAttribute("data-date") || "",
+510|            summary: card.getAttribute("data-summary") || "",
+511|          }));
+512|        }
+513|        items = items.filter((it) => it.slug);
+514|        if (!items.length) return;
+515|
+516|        const slugs = items.map((it) => it.slug);
+517|        try {
+518|          // batch in chunks of 20 to avoid long URLs
+519|          const chunks = [];
+520|          for (let i = 0; i < slugs.length; i += 20) chunks.push(slugs.slice(i, i + 20));
+521|          const map = new Map();
+522|          for (const chunk of chunks) {
+523|            const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(","))}`, {
+524|              headers: { Accept: "application/json" },
+525|            });
+526|            if (!res.ok) continue;
+527|            const data = await res.json();
+528|            for (const it of data.items || []) {
+529|              map.set(it.slug, Number(it.count) || 0);
+530|            }
+531|          }
+532|
+533|          const ranked = items
+534|            .map((it) => ({ ...it, views: map.get(it.slug) || 0 }))
+535|            .sort((a, b) => b.views - a.views || String(b.date).localeCompare(String(a.date)))
+536|            .slice(0, 6);
+537|
+538|          grid.innerHTML = ranked
+539|            .map((it, idx) => {
+540|              const dateHtml = it.date ? `<span class="ln-dot">·</span><span>${it.date}</span>` : "";
+541|              return `<a class="ln-hot-card" href="/posts/${it.slug}">
+542|                <span class="ln-hot-rank">${idx + 1}</span>
+543|                <span class="ln-hot-main">
+544|                  <span class="ln-hot-title">${escapeHtml(it.title)}</span>
+545|                  <span class="ln-hot-meta">
+546|                    <span class="ln-hot-views">阅读 ${it.views}</span>
+547|                    ${dateHtml}
+548|                  </span>
+549|                </span>
+550|              </a>`;
+551|            })
+552|            .join("");
+553|
+554|          if (document.getElementById("hotMeta")) {
+555|            document.getElementById("hotMeta").textContent = "按阅读量排序";
+556|          }
+557|        } catch {
+558|          // 保留 SSR 骨架，避免空白跳动
+559|        }
+560|
+561|        function escapeHtml(s) {
+562|          return String(s || "")
+563|            .replace(/&/g, "&amp;")
+564|            .replace(/</g, "&lt;")
+565|            .replace(/>/g, "&gt;")
+566|            .replace(/"/g, "&quot;");
+567|        }
+568|      })();
+569|
+570|</script>
+571|  </body>
+572|</html>

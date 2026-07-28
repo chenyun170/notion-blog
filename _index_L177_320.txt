@@ -1,0 +1,144 @@
+177|      {contentSections.length ? (
+178|        <section class="ln-section ln-reveal" aria-label="Content sections">
+179|          <div class="ln-section-head">
+180|            <h2 class="ln-section-title">重点栏目</h2>
+181|            <div class="ln-section-meta">按场景阅读</div>
+182|          </div>
+183|          <div class="ln-section-grid">
+184|            {contentSections.map((section) => (
+185|              <section class="ln-section-panel">
+186|                <div class="ln-section-panel-head">
+187|                  <div>
+188|                    <h3>{section.title}</h3>
+189|                    <p>{section.desc}</p>
+190|                  </div>
+191|                </div>
+192|                <div class="ln-section-list">
+193|                  {section.posts.map((post) => (
+194|                    <a href={`/posts/${post.slug}`}>
+195|                      <span>{post.title}</span>
+196|                      <small>{post.date || "—"}</small>
+197|                    </a>
+198|                  ))}
+199|                </div>
+200|              </section>
+201|            ))}
+202|          </div>
+203|        </section>
+204|      ) : null}
+205|
+206|
+207|      <!-- Hot posts (by views) -->
+208|      <section class="ln-section ln-reveal" id="hotSection" aria-label="Hot posts" hidden>
+209|        <div class="ln-section-head">
+210|          <h2 class="ln-section-title">热门文章</h2>
+211|          <div class="ln-section-meta">按阅读量排序</div>
+212|        </div>
+213|        <div class="ln-hot-grid" id="hotGrid">
+214|          {hotCandidates.slice(0, 6).map((p, i) => (
+215|            <a class="ln-hot-card" href={`/posts/${p.slug}`} data-slug={p.slug} data-title={p.title} data-date={p.date || ""} data-summary={p.summary || ""}>
+216|              <span class="ln-hot-rank">{i + 1}</span>
+217|              <span class="ln-hot-main">
+218|                <span class="ln-hot-title">{p.title}</span>
+219|                <span class="ln-hot-meta">
+220|                  <span class="ln-hot-views" data-views-for={p.slug}>阅读 --</span>
+221|                  {p.date ? <span class="ln-dot">·</span> : null}
+222|                  {p.date ? <span>{p.date}</span> : null}
+223|                </span>
+224|              </span>
+225|            </a>
+226|          ))}
+227|        </div>
+228|      </section>
+229|
+230|      <!-- Recommended -->
+231|      {recommended.length ? (
+232|        <section class="ln-section ln-reveal">
+233|          <div class="ln-section-head">
+234|            <h2 class="ln-section-title">推荐阅读</h2>
+235|            <div class="ln-section-meta">优先看的文章</div>
+236|          </div>
+237|          <div class="ln-card-grid ln-card-grid-3">
+238|            {recommended.map((p) => (
+239|              <a class="ln-card ln-card-featured" href={`/posts/${p.slug}`} data-title={p.title} data-summary={p.summary} data-tags={getDisplayTags(p.tags).join(",")}>
+240|                {p.cover ? <img src={p.cover} class="ln-card-img" alt={p.title} width="480" height="300" loading="lazy" decoding="async" sizes="(max-width: 900px) 100vw, 33vw" /> : null}
+241|                <div class="ln-card-body">
+242|                  <div class="ln-card-title">{p.title}</div>
+243|                  <div class="ln-card-meta">
+244|                    <span>{p.date || "—"}</span>
+245|                    {getDisplayTags(p.tags).length > 0 ? <span class="ln-dot">·</span> : null}
+246|                    {getDisplayTags(p.tags).length > 0 ? <span>{getDisplayTags(p.tags).slice(0, 2).join(" · ")}</span> : null}
+247|                  </div>
+248|                </div>
+249|              </a>
+250|            ))}
+251|          </div>
+252|        </section>
+253|      ) : null}
+254|
+255|      <!-- Main list in glass -->
+256|      <section class="ln-glass ln-reveal" aria-label="posts glass" id="listRoot">
+257|        <div class="ln-glass-head">
+258|          <div>
+259|            <div class="ln-glass-title">最新文章</div>
+260|            <div class="ln-glass-meta">共 <span id="countText">{latest.length}</span> 篇</div>
+261|          </div>
+262|          <div class="ln-glass-right">
+263|            <button class="ln-chip" id="resetBtn" type="button">重置</button>
+264|            <span class="ln-glass-meta ln-hide-sm">{posts.length} 篇文章</span>
+265|          </div>
+266|        </div>
+267|        <div class="ln-feed">
+268|          {latest.map((p) => (
+269|            <article class="ln-feed-item">
+270|              <a href={`/posts/${p.slug}`} data-title={p.title} data-summary={p.summary} data-tags={getDisplayTags(p.tags).join(",")}>
+271|              {p.cover ? (
+272|                <span class="ln-feed-thumb" aria-hidden="true">
+273|                  <img src={p.cover} alt={p.title} width="160" height="100" loading="lazy" decoding="async" />
+274|                </span>
+275|              ) : null}
+276|              <span class="ln-feed-main">
+277|                <span class="ln-feed-meta">
+278|                  <span>{p.date || "—"}</span>
+279|                  <span class="ln-dot">·</span>
+280|                  <span class="ln-feed-read">约 {readingTime(p)} 分钟</span>
+281|                  {getDisplayTags(p.tags).length > 0 ? <span class="ln-dot">·</span> : null}
+282|                  {getDisplayTags(p.tags).length > 0 ? <span>{getDisplayTags(p.tags).slice(0, 3).join(" · ")}</span> : null}
+283|                </span>
+284|                <span class="ln-feed-title">{p.title}</span>
+285|                <span class="ln-feed-summary">{p.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
+286|              </span>
+287|              <span class="ln-feed-arrow" aria-hidden="true">→</span>
+288|              </a>
+289|            </article>
+290|          ))}
+291|        </div>
+292|        <nav class="ln-pagination" id="pagination" aria-label="Article pagination">
+293|          <div class="ln-page-meta" id="pageMeta"></div>
+294|          <div class="ln-page-controls">
+295|            <button class="ln-page-btn" id="pagePrev" type="button" aria-label="Previous page">Prev</button>
+296|            <div class="ln-page-numbers" id="pageNumbers"></div>
+297|            <button class="ln-page-btn" id="pageNext" type="button" aria-label="Next page">Next</button>
+298|          </div>
+299|        </nav>
+300|        <!-- EMPTY STATE -->
+301|        <div class="ln-empty" id="emptyState" hidden>
+302|          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+303|          <div class="ln-empty-title">没有找到结果</div>
+304|          <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
+305|          <div class="ln-empty-actions">
+306|            <button class="ln-btn" type="button" id="emptyReset">重置筛选</button>
+307|          </div>
+308|        </div>
+309|      </section>
+310|
+311|      <div class="ln-reveal" style="padding: 0 20px; max-width: 600px; margin: 0 auto;">
+312|        
+313|      <script type="application/json" id="hotSeed" set:html={JSON.stringify(hotCandidates.map((p) => ({ slug: p.slug, title: p.title, date: p.date || "", summary: p.summary || "" })))}></script>
+314|
+315|      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+316|      </div>
+317|
+318|      <footer class="ln-foot ln-reveal">
+319|        <span>© {new Date().getFullYear()} 外贸情报局</span>
+320|        <span class="ln-dot">·</span>

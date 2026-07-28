@@ -1,0 +1,29 @@
+.ln-glass-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ln-glass-title { font-size: 14px; font-weight: 900; letter-spacing: -0.02em; }
+.ln-glass-meta { font-size: 12px; color: var(--muted); }
+.ln-glass-right { display: flex; gap: 10px; align-items: center; }
+.ln-chip {
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.035);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+}
+:root:not(.dark) .ln-chip { background: rgba(10,12,16,.02); }
+.ln-chip:hover { border-color: var(--line2); }
+
+/* ---------- Pagination ---------- */
+.ln-pagination {
+  display: flex;
+  align-it

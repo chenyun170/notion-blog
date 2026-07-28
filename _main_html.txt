@@ -1,0 +1,94 @@
+110|    <main class="ln-wrap">
+111|      <!-- HERO：短介绍 + 搜索 -->
+112|      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+113|        <div class="ln-kicker">外贸增长 · 客户开发 · 软件工具</div>
+114|        <h1 class="ln-h1">外贸情报局</h1>
+115|        <p class="ln-sub">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
+116|        <div class="ln-controls ln-reveal" style="margin-top:16px;">
+117|          <div class="ln-search" role="search">
+118|            <span class="ln-ico">⌕</span>
+119|            <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
+120|            <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+121|          </div>
+122|        </div>
+123|      </section>
+124|
+125|      <!-- 全部文章：筛选贴在列表上方 -->
+126|      <section class="ln-glass ln-reveal" aria-label="posts glass" id="listRoot">
+127|        <div class="ln-glass-head">
+128|          <div>
+129|            <div class="ln-glass-title">全部文章</div>
+130|            <div class="ln-glass-meta">共 <span id="countText">{latest.length}</span> 篇</div>
+131|          </div>
+132|          <div class="ln-glass-right">
+133|            <button class="ln-chip" id="resetBtn" type="button">重置筛选</button>
+134|          </div>
+135|        </div>
+136|        <div class="ln-list-filters ln-reveal" id="listFilters">
+137|          <div class="ln-filter">
+138|            <button class="ln-pill active" type="button" data-tag="__all">全部</button>
+139|            <div class="ln-pill-wrap" id="pillWrap">
+140|              {filterTags.map((t) => (
+141|                <button class="ln-pill" type="button" data-tag={t.name} title={`${t.count} 篇文章`}>{t.name}</button>
+142|              ))}
+143|              <button class="ln-pill ln-pill-more" id="pillMore" type="button" aria-expanded="false">更多</button>
+144|            </div>
+145|          </div>
+146|        </div>
+147|        <div class="ln-feed">
+148|          {latest.map((p) => (
+149|            <article class="ln-feed-item">
+150|              <a href={`/posts/${p.slug}`} data-title={p.title} data-summary={p.summary} data-tags={getDisplayTags(p.tags).join(",")} data-slug={p.slug}>
+151|              {p.cover ? (
+152|                <span class="ln-feed-thumb" aria-hidden="true">
+153|                  <img src={p.cover} alt={p.title} width="160" height="100" loading="lazy" decoding="async" />
+154|                </span>
+155|              ) : null}
+156|              <span class="ln-feed-main">
+157|                <span class="ln-feed-meta">
+158|                  <span>{p.date || "—"}</span>
+159|                  <span class="ln-dot">·</span>
+160|                  <span class="ln-feed-read">约 {readingTime(p)} 分钟</span>
+161|                  {getDisplayTags(p.tags).length > 0 ? <span class="ln-dot">·</span> : null}
+162|                  {getDisplayTags(p.tags).length > 0 ? <span>{getDisplayTags(p.tags).slice(0, 3).join(" · ")}</span> : null}
+163|                </span>
+164|                <span class="ln-feed-title">{p.title}</span>
+165|                <span class="ln-feed-summary">{p.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
+166|              </span>
+167|              <span class="ln-feed-arrow" aria-hidden="true">→</span>
+168|              </a>
+169|            </article>
+170|          ))}
+171|        </div>
+172|        <nav class="ln-pagination" id="pagination" aria-label="Article pagination">
+173|          <div class="ln-page-meta" id="pageMeta"></div>
+174|          <div class="ln-page-controls">
+175|            <button class="ln-page-btn" id="pagePrev" type="button" aria-label="Previous page">Prev</button>
+176|            <div class="ln-page-numbers" id="pageNumbers"></div>
+177|            <button class="ln-page-btn" id="pageNext" type="button" aria-label="Next page">Next</button>
+178|          </div>
+179|        </nav>
+180|        <!-- EMPTY STATE -->
+181|        <div class="ln-empty" id="emptyState" hidden>
+182|          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+183|          <div class="ln-empty-title">没有找到结果</div>
+184|          <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
+185|          <div class="ln-empty-actions">
+186|            <button class="ln-btn" type="button" id="emptyReset">重置筛选</button>
+187|          </div>
+188|        </div>
+189|      </section>
+190|
+191|      <div class="ln-reveal" style="padding: 0 20px; max-width: 600px; margin: 0 auto;">
+192|        
+193|      <script type="application/json" id="hotSeed" set:html={JSON.stringify(hotCandidates.map((p) => ({ slug: p.slug, title: p.title, date: p.date || "", summary: p.summary || "" })))}></script>
+194|
+195|      <NewsletterSubscribe action={NEWSLETTER_ACTION} />
+196|      </div>
+197|
+198|      <footer class="ln-foot ln-reveal">
+199|        <span>© {new Date().getFullYear()} 外贸情报局</span>
+200|        <span class="ln-dot">·</span>
+201|        <span class="ln-muted">内容持续更新</span>
+202|      </footer>
+203|    </main>

@@ -1,0 +1,120 @@
+111|      <!-- HERO：短介绍 + 搜索 -->
+112|      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
+113|        <div class="ln-kicker">外贸增长 · 客户开发 · 软件工具</div>
+114|        <h1 class="ln-h1">外贸情报局</h1>
+115|        <p class="ln-sub">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
+116|        <div class="ln-controls ln-reveal" style="margin-top:16px;">
+117|          <div class="ln-search" role="search">
+118|            <span class="ln-ico">⌕</span>
+119|            <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
+120|            <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+121|          </div>
+122|        </div>
+123|      </section>
+124|
+125|      <!-- 专题入口 -->
+126|      <section class="ln-section ln-reveal" aria-label="Topic shortcuts">
+127|        <div class="ln-section-head">
+128|            <h2 class="ln-section-title">专题入口</h2>
+129|            <div class="ln-section-meta">按方向进入</div>
+130|        </div>
+131|        <div class="ln-topic-grid">
+132|          {TOPICS.map((topic) => (
+133|            <a class="ln-topic" href={`/topics/${topic.slug}`} data-topic-query={topic.query}>
+134|              <span class="ln-topic-name">{topic.name}</span>
+135|              <span class="ln-topic-desc">{topic.desc}</span>
+136|            </a>
+137|          ))}
+138|        </div>
+139|      </section>
+140|
+141|      <!-- 热门文章：骨架始终占位，避免布局跳动 -->
+142|      <section class="ln-section ln-reveal" id="hotSection" aria-label="Hot posts">
+143|        <div class="ln-section-head">
+144|          <h2 class="ln-section-title">热门文章</h2>
+145|          <div class="ln-section-meta" id="hotMeta">按阅读量排序</div>
+146|        </div>
+147|        <div class="ln-hot-grid" id="hotGrid">
+148|          {hotCandidates.slice(0, 6).map((p, i) => (
+149|            <a class="ln-hot-card" href={`/posts/${p.slug}`} data-slug={p.slug} data-title={p.title} data-date={p.date || ""} data-summary={p.summary || ""}>
+150|              <span class="ln-hot-rank">{i + 1}</span>
+151|              <span class="ln-hot-main">
+152|                <span class="ln-hot-title">{p.title}</span>
+153|                <span class="ln-hot-meta">
+154|                  <span class="ln-hot-views" data-views-for={p.slug}>阅读 --</span>
+155|                  {p.date ? <span class="ln-dot">·</span> : null}
+156|                  {p.date ? <span>{p.date}</span> : null}
+157|                </span>
+158|              </span>
+159|            </a>
+160|          ))}
+161|        </div>
+162|      </section>
+163|
+164|      <!-- 全部文章：筛选贴在列表上方 -->
+165|      <section class="ln-glass ln-reveal" aria-label="posts glass" id="listRoot">
+166|        <div class="ln-glass-head">
+167|          <div>
+168|            <div class="ln-glass-title">全部文章</div>
+169|            <div class="ln-glass-meta">共 <span id="countText">{latest.length}</span> 篇</div>
+170|          </div>
+171|          <div class="ln-glass-right">
+172|            <button class="ln-chip" id="resetBtn" type="button">重置筛选</button>
+173|          </div>
+174|        </div>
+175|        <div class="ln-list-filters ln-reveal" id="listFilters">
+176|          <div class="ln-filter">
+177|            <button class="ln-pill active" type="button" data-tag="__all">全部</button>
+178|            <div class="ln-pill-wrap" id="pillWrap">
+179|              {filterTags.map((t) => (
+180|                <button class="ln-pill" type="button" data-tag={t.name} title={`${t.count} 篇文章`}>{t.name}</button>
+181|              ))}
+182|              <button class="ln-pill ln-pill-more" id="pillMore" type="button" aria-expanded="false">更多</button>
+183|            </div>
+184|          </div>
+185|        </div>
+186|        <div class="ln-feed">
+187|          {latest.map((p) => (
+188|            <article class="ln-feed-item">
+189|              <a href={`/posts/${p.slug}`} data-title={p.title} data-summary={p.summary} data-tags={getDisplayTags(p.tags).join(",")}>
+190|              {p.cover ? (
+191|                <span class="ln-feed-thumb" aria-hidden="true">
+192|                  <img src={p.cover} alt={p.title} width="160" height="100" loading="lazy" decoding="async" />
+193|                </span>
+194|              ) : null}
+195|              <span class="ln-feed-main">
+196|                <span class="ln-feed-meta">
+197|                  <span>{p.date || "—"}</span>
+198|                  <span class="ln-dot">·</span>
+199|                  <span class="ln-feed-read">约 {readingTime(p)} 分钟</span>
+200|                  {getDisplayTags(p.tags).length > 0 ? <span class="ln-dot">·</span> : null}
+201|                  {getDisplayTags(p.tags).length > 0 ? <span>{getDisplayTags(p.tags).slice(0, 3).join(" · ")}</span> : null}
+202|                </span>
+203|                <span class="ln-feed-title">{p.title}</span>
+204|                <span class="ln-feed-summary">{p.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
+205|              </span>
+206|              <span class="ln-feed-arrow" aria-hidden="true">→</span>
+207|              </a>
+208|            </article>
+209|          ))}
+210|        </div>
+211|        <nav class="ln-pagination" id="pagination" aria-label="Article pagination">
+212|          <div class="ln-page-meta" id="pageMeta"></div>
+213|          <div class="ln-page-controls">
+214|            <button class="ln-page-btn" id="pagePrev" type="button" aria-label="Previous page">Prev</button>
+215|            <div class="ln-page-numbers" id="pageNumbers"></div>
+216|            <button class="ln-page-btn" id="pageNext" type="button" aria-label="Next page">Next</button>
+217|          </div>
+218|        </nav>
+219|        <!-- EMPTY STATE -->
+220|        <div class="ln-empty" id="emptyState" hidden>
+221|          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+222|          <div class="ln-empty-title">没有找到结果</div>
+223|          <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
+224|          <div class="ln-empty-actions">
+225|            <button class="ln-btn" type="button" id="emptyReset">重置筛选</button>
+226|          </div>
+227|        </div>
+228|      </section>
+229|
+230|      <div class="ln-reveal" style="padding: 0 20px; max-width: 600px; margin: 0 auto;">
