@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Client } from "@notionhq/client";
+import { SocksProxyAgent } from "socks-proxy-agent";
 
 const SNAPSHOT_URL = new URL("../src/data/notion-snapshot.json", import.meta.url);
 const SNAPSHOT_PATH = fileURLToPath(SNAPSHOT_URL);
@@ -248,7 +249,12 @@ if (!token || !databaseId) {
   process.exit(1);
 }
 
-const notion = new Client({ auth: token });
+const notion = new Client({
+  auth: token,
+  agent: process.env.SOCKS_PROXY
+    ? new SocksProxyAgent(process.env.SOCKS_PROXY)
+    : undefined,
+});
 const dataSourceId = await getDataSourceId(notion, databaseId);
 const pages = await queryPublishedPages(notion, dataSourceId);
 const posts = dedupePostsBySlug(pages.map(pageToPost).filter(Boolean));

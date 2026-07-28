@@ -94,6 +94,18 @@ const keyPoints = uniquePoints([
   "建议结合自身订单、客户沟通和交付节奏，及时调整报价与跟进策略。",
 ]).slice(0, 3);
 
+const tocPreview = (toc ?? []).slice(0, 5).map((item) => item.text).filter(Boolean);
+const aiReadText = (() => {
+  const base = (post.summary || "").replace(/\s+/g, " ").trim();
+  if (tocPreview.length >= 2) {
+    const steps = tocPreview.join(" → ");
+    if (base) return `${base} 本文按「${steps}」展开，约 ${readingMinutes} 分钟读完。`;
+    return `本文重点覆盖：${steps}。约 ${readingMinutes} 分钟读完。`;
+  }
+  if (base) return `${base} 约 ${readingMinutes} 分钟读完。`;
+  return `这篇文章围绕「${post.title}」展开，约 ${readingMinutes} 分钟读完。`;
+})();
+
 const faqs = [
   {
     question: `这篇文章主要讲什么？`,
@@ -388,6 +400,8 @@ const structuredData = {
             <span class="ln-muted">{post.date || ""}</span>
             <span class="ln-dot">·</span>
             <span class="ln-muted">约 {readingMinutes} 分钟阅读</span>
+            <span class="ln-dot">·</span>
+            <span class="ln-muted" id="viewCount" data-slug={post.slug}>阅读 --</span>
             {post.tags?.length ? <span class="ln-dot">·</span> : null}
             {post.tags?.length ? <span class="ln-muted">{post.tags.join(" · ")}</span> : null}
           </div>
@@ -395,13 +409,26 @@ const structuredData = {
           <div class="ln-share" id="shareArea">
             <span class="ln-share-label">分享：</span>
             <button class="ln-share-btn" id="shareCopy" type="button" title="复制链接">🔗 复制链接</button>
+            <button class="ln-share-btn" id="copyPoints" type="button" title="复制本文要点">📋 复制要点</button>
+            <button class="ln-share-btn" id="copyFull" type="button" title="复制全文">📄 复制全文</button>
             <a class="ln-share-btn" href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(canonicalURL)}`} title="邮件分享">📧 邮件</a>
             <button class="ln-share-btn" id="shareWechat" type="button" title="微信分享">💬 微信</button>
           </div>
 
           <h1 class="ln-post-title">{post.title}</h1>
 
-          {post.summary ? <p class="ln-post-summary">{post.summary}</p> : null}
+          <section class="ln-ai-read" aria-labelledby="ai-read-title">
+            <div class="ln-ai-read-head">
+              <div class="ln-ai-read-label" id="ai-read-title">📖 AI 速读</div>
+              <div class="ln-ai-read-meta">约 {readingMinutes} 分钟</div>
+            </div>
+            <p class="ln-ai-read-text ln-post-summary">{aiReadText}</p>
+            {tocPreview.length ? (
+              <ol class="ln-ai-read-steps">
+                {tocPreview.map((step) => <li>{step}</li>)}
+              </ol>
+            ) : null}
+          </section>
 
           {post.cover ? (
             <div class="ln-cover">
@@ -415,8 +442,11 @@ const structuredData = {
           <div class="ln-content">
             {keyPoints.length ? (
               <section class="ln-keypoints" aria-labelledby="keypoints-title">
-                <div class="ln-keypoints-label" id="keypoints-title">本文要点</div>
-                <ul>
+                <div class="ln-keypoints-head">
+                  <div class="ln-keypoints-label" id="keypoints-title">本文要点</div>
+                  <button class="ln-share-btn ln-copy-inline" id="copyPointsInline" type="button" title="复制本文要点">复制要点</button>
+                </div>
+                <ul id="keyPointsList">
                   {keyPoints.map((point) => <li>{point}</li>)}
                 </ul>
               </section>
@@ -781,6 +811,97 @@ const structuredData = {
       shareWechat?.addEventListener("click", () => {
         alert("微信分享：请复制链接后粘贴到微信聊天或朋友圈。\n\n" + location.href);
       });
+
+      // --- Copy points / full text ---
+      const flashBtn = (btn, okText, resetText) => {
+        if (!btn) return;
+        btn.textContent = okText;
+        setTimeout(() => { btn.textContent = resetText; }, 1800);
+      };
+
+      const copyText = async (text, btn, okText, resetText) => {
+        if (!text) {
+          flashBtn(btn, "❌ 无内容", resetText);
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          flashBtn(btn, okText, resetText);
+        } catch {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            flashBtn(btn, okText, resetText);
+          } catch {
+            flashBtn(btn, "❌ 复制失败", resetText);
+          }
+        }
+      };
+
+      const getPointsText = () => {
+        const items = Array.from(document.querySelectorAll("#keyPointsList li")).map((li) => li.textContent.trim()).filter(Boolean);
+        if (!items.length) return "";
+        const title = document.querySelector(".ln-post-title")?.textContent?.trim() || document.title;
+        return `【${title}】\n本文要点：\n` + items.map((t, i) => `${i + 1}. ${t}`).join("\n") + `\n\n原文：${location.href}`;
+      };
+
+      const getFullText = () => {
+        const title = document.querySelector(".ln-post-title")?.textContent?.trim() || "";
+        const summary = document.querySelector(".ln-post-summary")?.textContent?.trim() || "";
+        const body = document.getElementById("prose")?.innerText?.trim() || "";
+        const points = Array.from(document.querySelectorAll("#keyPointsList li")).map((li) => li.textContent.trim()).filter(Boolean);
+        const parts = [];
+        if (title) parts.push(title);
+        if (summary) parts.push(summary);
+        if (points.length) parts.push("本文要点：\n" + points.map((t, i) => `${i + 1}. ${t}`).join("\n"));
+        if (body) parts.push(body);
+        parts.push(`原文链接：${location.href}`);
+        return parts.join("\n\n");
+      };
+
+      const copyPointsBtn = document.getElementById("copyPoints");
+      const copyPointsInline = document.getElementById("copyPointsInline");
+      const copyFullBtn = document.getElementById("copyFull");
+
+      copyPointsBtn?.addEventListener("click", () => copyText(getPointsText(), copyPointsBtn, "✅ 要点已复制", "📋 复制要点"));
+      copyPointsInline?.addEventListener("click", () => copyText(getPointsText(), copyPointsInline, "已复制", "复制要点"));
+      copyFullBtn?.addEventListener("click", () => copyText(getFullText(), copyFullBtn, "✅ 全文已复制", "📄 复制全文"));
+
+      // --- View counter ---
+      const viewEl = document.getElementById("viewCount");
+      const viewSlug = viewEl?.getAttribute("data-slug") || "";
+      const formatViews = (n) => {
+        if (n == null || Number.isNaN(n)) return "--";
+        if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, "") + "w";
+        if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+        return String(n);
+      };
+      if (viewEl && viewSlug) {
+        const storageKey = "viewed:" + viewSlug;
+        const shouldInc = !sessionStorage.getItem(storageKey);
+        const q = new URLSearchParams({ slug: viewSlug });
+        if (shouldInc) q.set("inc", "1");
+        fetch("/api/views?" + q.toString(), { credentials: "same-origin" })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data && data.ok && typeof data.count === "number") {
+              viewEl.textContent = "阅读 " + formatViews(data.count);
+              if (shouldInc) sessionStorage.setItem(storageKey, "1");
+            } else {
+              viewEl.textContent = "阅读 --";
+            }
+          })
+          .catch(() => {
+            viewEl.textContent = "阅读 --";
+          });
+      }
 
       // --- Mobile TOC drawer ---
       const tocToggle = document.getElementById("tocToggle");
