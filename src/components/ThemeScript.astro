@@ -24,11 +24,10 @@
     } catch (e) {}
   })();
 </script>
-
 <script is:inline>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js?v=cleanup").catch(() => {});
     });
   }
 </script>

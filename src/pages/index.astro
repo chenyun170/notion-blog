@@ -5,7 +5,6 @@ import { TOPICS } from "../lib/topics";
 import NewsletterSubscribe from "../components/NewsletterSubscribe.astro";
 import SeoHead from "../components/SeoHead.astro";
 import SiteHeader from "../components/SiteHeader.astro";
-import FxBadge from "../components/FxBadge.astro";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL, NEWSLETTER_ACTION } from "../consts";
 
 export const prerender = false;
@@ -109,19 +108,22 @@ const websiteSchema = {
     <SiteHeader active="home" context={`${posts.length} 篇文章`} />
 
     <main class="ln-wrap">
-      <!-- HERO：短介绍 + 搜索 + CTA -->
-      <section class="ln-hero ln-hero-glass ln-hero-compact ln-reveal">
-        <div class="ln-kicker">外贸增长 · 客户开发 · 软件工具</div>
-        <h1 class="ln-h1">外贸情报局</h1>
-        <p class="ln-sub">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
-        <div class="ln-hero-actions ln-reveal">
-          <div class="ln-search" role="search">
-            <span class="ln-ico">⌕</span>
-            <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
-            <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+      <!-- HERO：短介绍 + 搜索 + CTA + 航线地图背景 -->
+      <section class="ln-hero ln-hero-map ln-reveal">
+        <canvas id="heroMapCanvas" class="ln-hero-map-bg" aria-hidden="true"></canvas>
+        <div class="ln-hero-map-overlay" aria-hidden="true"></div>
+        <div class="ln-hero-map-content">
+          <div class="ln-kicker">外贸增长 · 客户开发 · 软件工具</div>
+          <h1 class="ln-h1">外贸情报局</h1>
+          <p class="ln-sub">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
+          <div class="ln-hero-actions ln-reveal">
+            <div class="ln-search" role="search">
+              <span class="ln-ico">⌕</span>
+              <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
+              <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+            </div>
+            <a class="ln-hero-cta" href="/topics/customs-data">从海关数据开始 →</a>
           </div>
-          <FxBadge />
-          <a class="ln-hero-cta" href="/topics/customs-data">从海关数据开始 →</a>
         </div>
       </section>
 
@@ -212,7 +214,6 @@ const websiteSchema = {
                 </span>
                 <span class="ln-feed-title-row">
                   <span class="ln-feed-title">{p.title}</span>
-                  <span class="ln-hot-badge" hidden data-hot-for={p.slug}>热</span>
                 </span>
                 <span class="ln-feed-summary">{p.summary || "围绕外贸客户开发、数据分析和工具实战的文章笔记。"}</span>
               </span>
@@ -634,5 +635,176 @@ const websiteSchema = {
       })();
 
 </script>
-  </body>
+  
+  <script is:inline>
+    (function() {
+      const canvas = document.getElementById('heroMapCanvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      let w, h, dpr;
+      const particles = [];
+
+      const PORTS = [
+        { lat: 31.23, lng: 121.47 },
+        { lat: 22.54, lng: 114.06 },
+        { lat: 29.87, lng: 121.54 },
+        { lat: 36.07, lng: 120.38 },
+        { lat: 23.13, lng: 113.26 },
+        { lat: 34.05, lng: -118.24 },
+        { lat: 40.71, lng: -74.01 },
+        { lat: 51.92, lng: 4.48 },
+        { lat: 53.55, lng: 9.99 },
+        { lat: 25.2, lng: 55.27 },
+        { lat: 1.35, lng: 103.82 },
+        { lat: 35.68, lng: 139.69 },
+        { lat: 37.57, lng: 126.98 },
+        { lat: 19.08, lng: 72.88 },
+        { lat: 6.52, lng: 3.38 },
+        { lat: -23.96, lng: -46.33 }
+      ];
+
+      const ROUTES = [
+        [0,5],[0,6],[0,7],[0,8],[0,9],
+        [1,5],[1,7],[1,9],[1,10],
+        [2,5],[2,7],[2,8],
+        [3,5],[3,7],
+        [4,5],[4,6],[4,9],
+        [0,11],[1,11],[0,12],
+        [0,13],[4,13],[9,13],
+        [0,14],[4,14],
+        [0,15],[5,15]
+      ];
+
+      function latLngToXY(lat, lng) {
+        return {
+          x: ((lng + 180) / 360) * w,
+          y: ((90 - lat) / 180) * h
+        };
+      }
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = rect.width;
+        h = rect.height;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function initParticles() {
+        for (let i = 0; i < 80; i++) {
+          particles.push({
+            t: Math.random(),
+            speed: 0.0003 + Math.random() * 0.0008,
+            routeIdx: Math.floor(Math.random() * ROUTES.length),
+            size: 1 + Math.random() * 1.5
+          });
+        }
+      }
+
+      function drawGraticule() {
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.06)';
+        ctx.lineWidth = 0.5;
+        for (let lng = -180; lng <= 180; lng += 30) {
+          const { x } = latLngToXY(0, lng);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let lat = -90; lat <= 90; lat += 30) {
+          const { y } = latLngToXY(lat, 0);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+      }
+
+      function drawRoutes() {
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.12)';
+        ctx.lineWidth = 0.8;
+        for (const [fromIdx, toIdx] of ROUTES) {
+          const from = PORTS[fromIdx];
+          const to = PORTS[toIdx];
+          const p1 = latLngToXY(from.lat, from.lng);
+          const p2 = latLngToXY(to.lat, to.lng);
+          const midX = (p1.x + p2.x) / 2;
+          const midY = (p1.y + p2.y) / 2;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const bulge = Math.min(Math.abs(dx) * 0.15, 60);
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const cx = midX - (dy / dist) * bulge;
+          const cy = midY + (dx / dist) * bulge;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.quadraticCurveTo(cx, cy, p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+
+      function drawPorts() {
+        for (const port of PORTS) {
+          const { x, y } = latLngToXY(port.lat, port.lng);
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+          ctx.fill();
+        }
+      }
+
+      function drawParticles() {
+        for (const p of particles) {
+          const [fromIdx, toIdx] = ROUTES[p.routeIdx];
+          const from = PORTS[fromIdx];
+          const to = PORTS[toIdx];
+          const p1 = latLngToXY(from.lat, from.lng);
+          const p2 = latLngToXY(to.lat, to.lng);
+          const midX = (p1.x + p2.x) / 2;
+          const midY = (p1.y + p2.y) / 2;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const bulge = Math.min(Math.abs(dx) * 0.15, 60);
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const cx = midX - (dy / dist) * bulge;
+          const cy = midY + (dx / dist) * bulge;
+          const t = p.t;
+          const mt = 1 - t;
+          const x = mt * mt * p1.x + 2 * mt * t * cx + t * t * p2.x;
+          const y = mt * mt * p1.y + 2 * mt * t * cy + t * t * p2.y;
+          ctx.beginPath();
+          ctx.arc(x, y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.7)';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(x, y, p.size + 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+          ctx.fill();
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, w, h);
+        drawGraticule();
+        drawRoutes();
+        drawPorts();
+        drawParticles();
+        for (const p of particles) {
+          p.t += p.speed;
+          if (p.t > 1) p.t = 0;
+        }
+        requestAnimationFrame(animate);
+      }
+
+      resize();
+      initParticles();
+      animate();
+      window.addEventListener('resize', resize);
+    })();
+  </script>
+
+</body>
 </html>
