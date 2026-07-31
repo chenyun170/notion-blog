@@ -309,7 +309,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 .ln-search-v3{flex-shrink:0;width:160px;max-width:160px;min-width:160px;position:relative;display:flex;align-items:center;}
 .ln-search-v3 .ln-input {
   width: 160px;
-  height: 36px;
+  height: 28px;
   padding: 0 12px 0 30px;
   border-radius: 8px;
   border: 1px solid var(--line2);
