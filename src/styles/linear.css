@@ -1,6 +1,6 @@
 /* ========================================
    Intelligence Bureau Theme
-   外贸情报局 ?clean, cool, professional
+   å¤è´¸ææ¥å± ?clean, cool, professional
    ======================================== */
 
 /* ---------- View Transitions ---------- */
@@ -168,8 +168,8 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 .ln-wrap { max-width: 1100px; margin: 0 auto; padding: 10px 18px calc(112px + env(safe-area-inset-bottom)); min-height: calc(100dvh - 52px); }
 
 /* ========================================
-   HERO v3: 精致紧凑双栏布局
-   左：标题+描述  右：搜索+CTA+统计
+   HERO v3: ç²¾è´ç´§ååæ å¸å±
+   å·¦ï¼æ é¢+æè¿°  å³ï¼æç´¢+CTA+ç»è®¡
    ======================================== */
 .ln-hero-v3 {
   position: relative;
@@ -178,7 +178,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   background: transparent;
 }
 
-/* 背景光效 */
+/* èæ¯åæ */
 .ln-hero-v3-glow {
   position: absolute;
   top: -60px;
@@ -195,7 +195,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   background: radial-gradient(ellipse at center, rgba(56, 142, 255, .07) 0%, rgba(56, 142, 255, .01) 50%, transparent 75%);
 }
 
-/* 背景网格 */
+/* èæ¯ç½æ ¼ */
 .ln-hero-v3-grid {
   position: absolute;
   inset: 0;
@@ -214,7 +214,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
     linear-gradient(90deg, rgba(0,0,0,.03) 1px, transparent 1px);
 }
 
-/* 主体容器 */
+/* ä¸»ä½å®¹å¨ */
 .ln-hero-v3-inner {
   position: relative;
   z-index: 1;
@@ -227,7 +227,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   min-height: 240px;
 }
 
-/* 左栏 */
+/* å·¦æ  */
 .ln-hero-v3-left {
   flex: 0 0 auto;
   max-width: 460px;
@@ -296,7 +296,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   color: rgba(10,12,16,.5);
 }
 
-/* 右栏 */
+/* å³æ  */
 .ln-hero-v3-right {
   flex: 1 1 auto;
   min-width: 0;
@@ -305,7 +305,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   gap: 12px;
 }
 
-/* 搜索�?*/
+/* æç´¢æ¡?*/
 .ln-search-v3{flex-shrink:0;width:160px;max-width:160px;min-width:160px;position:relative;display:flex;align-items:center;}
 .ln-search-v3 .ln-input {
   width: 160px;
@@ -350,7 +350,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 }
 .ln-search-v3 .ln-clear:hover { color: var(--text); }
 
-/* 按钮�?*/
+/* æé®è¡?*/
 .ln-hero-v3-actions {
   display: flex;
   align-items: center;
@@ -392,7 +392,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   background: var(--panel2);
 }
 
-/* 统计�?*/
+/* ç»è®¡è¡?*/
 .ln-hero-v3-stats {
   display: flex;
   align-items: center;
@@ -429,7 +429,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   flex-shrink: 0;
 }
 
-/* 手机端：改为竖向排列 */
+/* ææºç«¯ï¼æ¹ä¸ºç«åæå */
 @media (max-width: 768px) {
   .ln-hero-v3-inner {
     flex-direction: column;
@@ -2224,7 +2224,7 @@ html:not(.dark){
 }
 
 
-/* ===== AI 速读卡片 ===== */
+/* ===== AI éè¯»å¡ç ===== */
 .ln-ai-read {
   margin: 14px 0 18px;
   padding: 16px 18px;
@@ -2275,7 +2275,7 @@ html:not(.dark){
   color: rgba(42,160,255,.8);
 }
 
-/* ===== 首页热门文章（方案A：封面卡片） ===== */
+/* ===== é¦é¡µç­é¨æç« ï¼æ¹æ¡Aï¼å°é¢å¡çï¼ ===== */
 .ln-section-hot { margin-top: 28px; }
 .ln-section-topics { margin-top: 28px; }
 .ln-hot-grid {
@@ -2413,7 +2413,7 @@ html:not(.dark){
   box-shadow: 0 10px 24px rgba(42,160,255,.32);
 }
 
-/* 专题入口轻量?*/
+/* ä¸é¢å¥å£è½»é?*/
 .ln-topic-grid-compact {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
@@ -2444,7 +2444,7 @@ html:not(.dark){
   .ln-hero-cta { width: 100%; height: 40px; }
 }
 
-/* 列表热门角标 */
+/* åè¡¨ç­é¨è§æ  */
 .ln-feed-title-row {
   display: flex;
   align-items: center;
@@ -2475,7 +2475,7 @@ html:not(.dark){
 
 
 
-/* ===== 首页：列表上方筛?===== */
+/* ===== é¦é¡µï¼åè¡¨ä¸æ¹ç­?===== */
 .ln-list-filters {
   padding: 12px 16px 4px;
   border-bottom: 1px solid var(--line);
@@ -2613,7 +2613,7 @@ html:not(.dark){
   box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
 }
 
-/* 响应?*/
+/* ååº?*/
 @media (max-width: 640px) {
   .ln-hero-map {
     min-height: 420px;

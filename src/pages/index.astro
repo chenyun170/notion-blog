@@ -1,4 +1,4 @@
-﻿---
+---
 import "../styles/linear.css";
 import { getPosts } from "../lib/notion";
 import { TOPICS } from "../lib/topics";
@@ -108,29 +108,38 @@ const websiteSchema = {
     <SiteHeader active="home" context={`${posts.length} 篇文章`} />
 
     <main class="ln-wrap">
-      <!-- HERO：精致深色科技感 -->
-      <section class="ln-hero ln-hero-v2 ln-reveal">
-        <div class="ln-hero-glow" aria-hidden="true"></div>
-        <div class="ln-hero-grid" aria-hidden="true"></div>
-        <div class="ln-hero-inner">
-          <div class="ln-hero-badge">
-            <span class="ln-hero-badge-dot"></span>
-            <span>外贸增长 · 客户开发 · 软件工具</span>
+      <!-- HERO：精致紧凑 -->
+      <section class="ln-hero-v3 ln-reveal">
+        <div class="ln-hero-v3-glow" aria-hidden="true"></div>
+        <div class="ln-hero-v3-grid" aria-hidden="true"></div>
+        <div class="ln-hero-v3-inner">
+          <!-- 左：标题+描述 -->
+          <div class="ln-hero-v3-left">
+            <div class="ln-hero-v3-badge">
+              <span class="ln-hero-v3-dot"></span>
+              <span>外贸增长 · 客户开发 · 软件工具</span>
+            </div>
+            <h1 class="ln-hero-v3-title">外贸情报局</h1>
+            <p class="ln-hero-v3-desc">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
           </div>
-          <h1 class="ln-hero-title">外贸情报局</h1>
-          <p class="ln-hero-desc">海关数据、客户开发、跨境物流与 AI 外贸工具——帮你更快找到买家、判断市场、搭增长流程。</p>
-          <div class="ln-hero-actions">
-            <div class="ln-search ln-search-v2" role="search">
-  <span class="ln-ico">⌕</span>
-  <input id="searchInput" class="ln-input" type="search" placeholder="搜索标题、摘要或标签… 也可以按 ⌘K" autocomplete="off" />
-  <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
-</div>
-            <a class="ln-hero-cta ln-hero-cta-v2" href="/topics/customs-data">从海关数据开始 →</a>
-          </div>
-          <div class="ln-hero-stats">
-            <div class="ln-hero-stat"><span class="ln-hero-stat-num">70+</span><span class="ln-hero-stat-label">篇文章</span></div>
-            <div class="ln-hero-stat"><span class="ln-hero-stat-num">12</span><span class="ln-hero-stat-label">个出口国</span></div>
-            <div class="ln-hero-stat"><span class="ln-hero-stat-num">周更</span><span class="ln-hero-stat-label">3-5 篇</span></div>
+          <!-- 右：搜索+CTA+统计 -->
+          <div class="ln-hero-v3-right">
+            <div class="ln-search ln-search-v3" role="search">
+              <span class="ln-ico">?</span>
+              <input id="searchInput" class="ln-input" type="search" placeholder="搜索…" autocomplete="off" />
+              <button class="ln-clear" id="clearSearch" type="button" aria-label="清空搜索">×</button>
+            </div>
+            <div class="ln-hero-v3-actions">
+              <a class="ln-hero-v3-cta" href="/topics/customs-data">从海关数据开始 →</a>
+              <a class="ln-hero-v3-link" href="/topics/all">浏览全部文章</a>
+            </div>
+            <div class="ln-hero-v3-stats">
+              <div class="ln-hero-v3-stat"><span class="ln-hero-v3-stat-num">70+</span><span class="ln-hero-v3-stat-label">篇文章</span></div>
+              <span class="ln-hero-v3-divider"></span>
+              <div class="ln-hero-v3-stat"><span class="ln-hero-v3-stat-num">12</span><span class="ln-hero-v3-stat-label">个出口国</span></div>
+              <span class="ln-hero-v3-divider"></span>
+              <div class="ln-hero-v3-stat"><span class="ln-hero-v3-stat-num">周更</span><span class="ln-hero-v3-stat-label">3-5 篇</span></div>
+            </div>
           </div>
         </div>
       </section>
@@ -240,7 +249,7 @@ const websiteSchema = {
         </nav>
         <!-- EMPTY STATE -->
         <div class="ln-empty" id="emptyState" hidden>
-          <div class="ln-empty-icon" aria-hidden="true">⌁</div>
+          <div class="ln-empty-icon" aria-hidden="true">?</div>
           <div class="ln-empty-title">没有找到结果</div>
           <div class="ln-empty-sub">换一个关键词或切换筛选。</div>
           <div class="ln-empty-actions">
@@ -257,7 +266,7 @@ const websiteSchema = {
       </div>
 
       <footer class="ln-foot ln-reveal">
-        <span>© {new Date().getFullYear()} 外贸情报局</span>
+        <span>? {new Date().getFullYear()} 外贸情报局</span>
         <span class="ln-dot">·</span>
         <span class="ln-muted">内容持续更新</span>
       </footer>
@@ -273,11 +282,11 @@ const websiteSchema = {
       const key = "theme";
       const saved = localStorage.getItem(key);
       const btn = document.getElementById("themeToggle");
-      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "🌙"; }
-      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "☀️"; }
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "??"; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "??"; }
       btn?.addEventListener("click", () => {
         root.classList.toggle("dark");
-        btn.textContent = root.classList.contains("dark") ? "🌙" : "☀️";
+        btn.textContent = root.classList.contains("dark") ? "??" : "??";
         localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
       });
 
