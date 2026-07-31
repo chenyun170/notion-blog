@@ -282,8 +282,8 @@ const websiteSchema = {
       const key = "theme";
       const saved = localStorage.getItem(key);
       const btn = document.getElementById("themeToggle");
-      const SUN = "\u2600";
-      const MOON = "\u263E";
+      const SUN = "\u2600\uFE0F";
+      const MOON = "\u{1F319}";
       if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = MOON; }
       if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = SUN; }
       btn?.addEventListener("click", () => {
