@@ -282,11 +282,13 @@ const websiteSchema = {
       const key = "theme";
       const saved = localStorage.getItem(key);
       const btn = document.getElementById("themeToggle");
-      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = "??"; }
-      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = "??"; }
+      const SUN = "\u2600";
+      const MOON = "\u263E";
+      if (saved === "dark") { root.classList.add("dark"); if (btn) btn.textContent = MOON; }
+      if (saved === "light") { root.classList.remove("dark"); if (btn) btn.textContent = SUN; }
       btn?.addEventListener("click", () => {
         root.classList.toggle("dark");
-        btn.textContent = root.classList.contains("dark") ? "??" : "??";
+        btn.textContent = root.classList.contains("dark") ? MOON : SUN;
         localStorage.setItem(key, root.classList.contains("dark") ? "dark" : "light");
       });
 

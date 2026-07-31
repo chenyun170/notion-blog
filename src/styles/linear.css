@@ -173,7 +173,7 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
    ======================================== */
 .ln-hero-v3 {
   position: relative;
-  padding: 24px 0 20px;
+  padding: 12px 0 10px;
   overflow: hidden;
   background: transparent;
 }
@@ -223,8 +223,8 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   padding: 0 24px;
   display: flex;
   align-items: center;
-  gap: 40px;
-  min-height: 240px;
+  gap: 32px;
+  min-height: 160px;
 }
 
 /* å·¦æ  */
@@ -306,9 +306,9 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 }
 
 /* æç´¢æ¡?*/
-.ln-search-v3{flex-shrink:0;width:160px;max-width:160px;min-width:160px;position:relative;display:flex;align-items:center;}
+.ln-search-v3{flex-shrink:0;width:200px;max-width:200px;min-width:200px;position:relative;display:flex;align-items:center;}
 .ln-search-v3 .ln-input {
-  width: 160px;
+  width: 200px;
   height: 28px;
   padding: 0 12px 0 30px;
   border-radius: 8px;
