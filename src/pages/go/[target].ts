@@ -4,7 +4,7 @@ export const prerender = false;
 
 const targets: Record<string, string> = {
   "oraagent": "https://www.oraskl.com/?i=BB54F6",
-  "oraagent-download": "https://agent.oraskl.com/releases/OraAgent-Setup-1.0.3.exe",
+  "oraagent-download": "https://agent.oraskl.com/releases/OraAgent/?i=BB54F6",
   "oraskl-customs": "https://www.oraskl.com/hgsj",
   "customs-data": "https://hg.smtso.com/?i=BB54F6",
   "decision-email": "http://h.topeasysoft.com/ww?i=BB54F6",
