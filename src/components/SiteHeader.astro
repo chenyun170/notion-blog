@@ -2,7 +2,7 @@
 import { SITE_TITLE } from "../consts";
 
 export interface Props {
-  active?: "home" | "about" | "oraagent";
+  active?: "home" | "about" | "oraagent" | "customer-report";
   context?: string;
 }
 
@@ -18,6 +18,8 @@ const { active = "", context = "" } = Astro.props;
       {active === "about" ? <span class="ln-muted">关于</span> : <a class="ln-navlink" href="/about">关于</a>}
       <span class="ln-dot">·</span>
       {active === "oraagent" ? <span class="ln-muted">OraAgent</span> : <a class="ln-navlink" href="/oraagent">OraAgent</a>}
+      <span class="ln-dot">·</span>
+      {active === "customer-report" ? <span class="ln-muted">客户开发报告</span> : <a class="ln-navlink" href="/customer-report">客户开发报告</a>}
       {context ? (
         <>
           <span class="ln-dot">·</span>
