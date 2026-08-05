@@ -1,0 +1,193 @@
+---
+import "../../styles/linear.css";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../../consts";
+import { getReports } from "../../data/reports";
+
+export const prerender = true;
+
+const reports = getReports();
+const pageTitle = `客户开发报告 | ${SITE_TITLE}`;
+const pageDescription =
+  "外贸情报局客户开发报告栏目：基于海关数据的市场分析与客户开发方案，覆盖美国灯具、LED 照明等品类的进口市场、头部采购商、供应国竞争格局与开发窗口。";
+const canonicalURL = new URL("/customer-report", SITE_URL).toString();
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: SITE_TITLE, item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "客户开发报告", item: canonicalURL },
+  ],
+};
+
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalURL,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: reports.length,
+    itemListElement: reports.map((report, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: new URL(`/customer-report/${report.slug}`, SITE_URL).toString(),
+      name: report.title,
+      description: report.description,
+    })),
+  },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={pageDescription}
+      canonical={canonicalURL}
+      includeRss={false}
+      structuredData={{
+        "@context": "https://schema.org",
+        "@graph": [breadcrumbSchema, collectionSchema],
+      }}
+    />
+  </head>
+
+  <body class="ln ln-home ln-report">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader active="customer-report" />
+
+    <main class="ln-wrap">
+      <!-- 面包屑 -->
+      <nav class="cr-crumbs" aria-label="面包屑">
+        <a href="/">首页</a>
+        <span>/</span>
+        <span class="cr-crumbs-current">客户开发报告</span>
+      </nav>
+
+      <!-- 栏目头部 -->
+      <section class="cr-hero">
+        <div class="cr-hero-inner">
+          <div class="ln-kicker">客户开发报告 · 基于海关数据</div>
+          <h1 class="cr-title">客户开发报告</h1>
+          <p class="cr-sub">
+            面向外贸人的市场分析与客户开发方案。每份报告包含：进口市场规模、头部采购商、供应国竞争格局、旺季节奏与可直接开发的中国 → 目标国买家名单。
+          </p>
+          <div class="cr-badges">
+            <span>报告总数 <b>{reports.length} 份</b></span>
+            <span>数据来源 <b>海关数据</b></span>
+            <span>更新频率 <b>按需</b></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 报告列表 -->
+      <section class="ln-section ln-reveal">
+        <div class="ln-section-head">
+          <h2 class="ln-section-title">全部报告</h2>
+          <div class="ln-section-meta">点击卡片查看完整分析</div>
+        </div>
+
+        <div class="cr-list">
+          {reports.map((report) => (
+            <a class="cr-card" href={`/customer-report/${report.slug}`}>
+              <div class="cr-card-top">
+                <span class="cr-card-date">{report.date}</span>
+                {report.badges?.slice(0, 3).map((badge) => (
+                  <span class="cr-card-badge">{badge.value}</span>
+                ))}
+              </div>
+              <h3 class="cr-card-title">{report.title}</h3>
+              <p class="cr-card-desc">{report.description}</p>
+              <div class="cr-card-foot">
+                <span class="cr-card-go">阅读完整报告 →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    </main>
+
+    <style>
+      .cr-crumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ln-muted, #6b7280);
+        margin: 28px 0 8px;
+      }
+      .cr-crumbs a { color: var(--ln-accent, #1b6ef3); text-decoration: none; }
+      .cr-crumbs a:hover { text-decoration: underline; }
+      .cr-crumbs-current { color: var(--ln-text, #1f2937); font-weight: 600; }
+
+      .cr-hero {
+        border-radius: 20px;
+        background: linear-gradient(135deg, #0d1b2a 0%, #1b3a5c 100%);
+        color: #fff;
+        padding: 48px 40px;
+        margin: 16px 0 40px;
+      }
+      .cr-hero-inner { max-width: 760px; }
+      .cr-hero .ln-kicker { color: #7dd3fc; margin-bottom: 12px; }
+      .cr-title { font-size: 38px; line-height: 1.2; margin: 0 0 14px; color: #fff; }
+      .cr-sub { font-size: 15px; line-height: 1.8; color: #c6d5e3; margin: 0 0 24px; }
+      .cr-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+      .cr-badges span {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 13px;
+        color: #e5edf5;
+      }
+      .cr-badges b { color: #fff; font-weight: 700; }
+
+      .cr-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+      }
+      .cr-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid var(--ln-border, #e6eaf0);
+        border-radius: 16px;
+        padding: 20px;
+        background: var(--ln-card, #fff);
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+      .cr-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        border-color: var(--ln-accent, #1b6ef3);
+      }
+      .cr-card-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .cr-card-date { font-size: 12px; color: var(--ln-muted, #6b7280); font-weight: 600; }
+      .cr-card-badge {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ln-accent, #1b6ef3);
+        background: rgba(27,110,243,0.08);
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      .cr-card-title { font-size: 17px; line-height: 1.45; margin: 0; color: var(--ln-text, #1f2937); }
+      .cr-card-desc { font-size: 13px; line-height: 1.7; color: var(--ln-muted, #6b7280); margin: 0; }
+      .cr-card-foot { margin-top: auto; padding-top: 6px; }
+      .cr-card-go { font-size: 13px; font-weight: 600; color: var(--ln-accent, #1b6ef3); }
+
+      @media (max-width: 900px) {
+        .cr-hero { padding: 32px 24px; }
+        .cr-title { font-size: 30px; }
+        .cr-list { grid-template-columns: 1fr; }
+      }
+    </style>
+  </body>
+</html>

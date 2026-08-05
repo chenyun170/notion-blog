@@ -1,0 +1,381 @@
+---
+import "../../styles/linear.css";
+import SeoHead from "../../components/SeoHead.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import { SITE_TITLE, SITE_URL } from "../../consts";
+import { getReportBySlug, getReports } from "../../data/reports";
+
+export const prerender = true;
+export async function getStaticPaths() {
+  const reports = getReports();
+  return reports.map((report) => ({
+    params: { slug: report.slug },
+    props: { report },
+  }));
+}
+
+const { report } = Astro.props;
+const canonicalURL = new URL(`/customer-report/${report.slug}`, SITE_URL).toString();
+const pageTitle = `${report.title} | ${SITE_TITLE}`;
+const pageImage = new URL("/og/customer-report.png", SITE_URL).toString();
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: SITE_TITLE, item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "客户开发报告", item: new URL("/customer-report", SITE_URL).toString() },
+    { "@type": "ListItem", position: 3, name: report.shortTitle, item: canonicalURL },
+  ],
+};
+
+const datasetSchema = {
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  name: report.title,
+  description: report.description,
+  url: canonicalURL,
+  dateCreated: report.date,
+  creator: { "@type": "Organization", name: SITE_TITLE, url: SITE_URL },
+};
+---
+
+<html lang="zh-CN">
+  <head>
+    <SeoHead
+      title={pageTitle}
+      description={report.description}
+      canonical={canonicalURL}
+      image={pageImage}
+      includeRss={false}
+      structuredData={{
+        "@context": "https://schema.org",
+        "@graph": [breadcrumbSchema, datasetSchema],
+      }}
+    />
+  </head>
+
+  <body class="ln ln-home ln-report">
+    <div class="ln-bg-floor" aria-hidden="true"></div>
+    <SiteHeader active="customer-report" context={report.shortTitle} />
+
+    <main class="ln-wrap">
+      <!-- 面包屑 -->
+      <nav class="cr-crumbs" aria-label="面包屑">
+        <a href="/">首页</a>
+        <span>/</span>
+        <a href="/customer-report/">客户开发报告</a>
+        <span>/</span>
+        <span class="cr-crumbs-current">{report.shortTitle}</span>
+      </nav>
+
+      <!-- 报告头部 -->
+      <section class="cr-hero">
+        <div class="cr-hero-inner">
+          <div class="ln-kicker">{report.heroKicker}</div>
+          <h1 class="cr-title" set:html={report.heroTitle}></h1>
+          <p class="cr-sub">{report.heroSub}</p>
+          <div class="cr-badges">
+            {report.badges.map((badge) => (
+              <span>{badge.label} <b>{badge.value}</b></span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {
+        report.sections.map((section) => {
+          // metrics
+          if (section.kind === "metrics") {
+            return (
+              <section class="ln-section ln-reveal">
+                <div class="ln-section-head">
+                  <h2 class="ln-section-title">{section.title}</h2>
+                  {section.meta && <div class="ln-section-meta">{section.meta}</div>}
+                </div>
+                <div class="cr-metrics">
+                  {section.metrics?.map((metric) => (
+                    <div class="cr-metric"><b>{metric.value}</b><span>{metric.label}</span></div>
+                  ))}
+                </div>
+                {section.note && <p class="cr-note">{section.note}</p>}
+              </section>
+            );
+          }
+
+          // table
+          if (section.kind === "table") {
+            return (
+              <section class="ln-section ln-reveal">
+                <div class="ln-section-head">
+                  <h2 class="ln-section-title">{section.title}</h2>
+                  {section.meta && <div class="ln-section-meta">{section.meta}</div>}
+                </div>
+                <div class="cr-table-wrap">
+                  <table class="cr-table">
+                    <thead>
+                      <tr>{section.headers?.map((h) => <th>{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {section.rows?.map((row) => (
+                        <tr>
+                          {row.map((cell, idx) => (
+                            <td class:list={[idx === 1 ? "cr-name" : "", section.highlight?.includes(cell) ? "cr-hl" : ""]}>{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {section.insight && (
+                  <div class="cr-insight"><b>解读：</b>{section.insight}</div>
+                )}
+                {section.insightHtml && (
+                  <div class="cr-insight" set:html={section.insightHtml}></div>
+                )}
+              </section>
+            );
+          }
+
+          // trend
+          if (section.kind === "trend") {
+            return (
+              <section class="ln-section ln-reveal">
+                <div class="ln-section-head">
+                  <h2 class="ln-section-title">{section.title}</h2>
+                  {section.meta && <div class="ln-section-meta">{section.meta}</div>}
+                </div>
+                <div class="cr-trend">
+                  {section.trends?.map((trend) => (
+                    <div class:list={["cr-trend-item", trend.type === "peak" ? "cr-trend-peak" : "", trend.type === "low" ? "cr-trend-low" : ""]}>
+                      <b>{trend.title}</b>
+                      <span>{trend.value}</span>
+                      <em>{trend.note}</em>
+                    </div>
+                  ))}
+                </div>
+                {section.insight && (
+                  <div class="cr-insight"><b>结论：</b>{section.insight}</div>
+                )}
+              </section>
+            );
+          }
+
+          // buyers
+          if (section.kind === "buyers") {
+            return (
+              <section class="ln-section ln-reveal">
+                <div class="ln-section-head">
+                  <h2 class="ln-section-title">{section.title}</h2>
+                  {section.meta && <div class="ln-section-meta">{section.meta}</div>}
+                </div>
+                <div class="cr-buyer-grid">
+                  {section.buyers?.map((buyer) => (
+                    <div class="cr-buyer">
+                      <b>{buyer.name}</b>
+                      <span class="cr-tag">{buyer.tag}</span>
+                      <ul>
+                        {buyer.points.map((point) => <li set:html={point}></li>)}
+                      </ul>
+                      <p class="cr-judge">{buyer.judge}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          // layers
+          if (section.kind === "layers") {
+            return (
+              <section class="ln-section ln-reveal">
+                <div class="ln-section-head">
+                  <h2 class="ln-section-title">{section.title}</h2>
+                  {section.meta && <div class="ln-section-meta">{section.meta}</div>}
+                </div>
+                {section.layers?.map((layer) => (
+                  <div class="cr-layer">
+                    <h3>
+                      <span class:list={["cr-layer-badge", `cr-${layer.cls}`]}>{layer.badge}</span>
+                      {layer.title}
+                    </h3>
+                    <p set:html={layer.desc}></p>
+                  </div>
+                ))}
+              </section>
+            );
+          }
+
+          // compliance / timing
+          if (section.kind === "compliance" || section.kind === "timing") {
+            const cls = section.kind === "compliance" ? "cr-compliance" : "cr-timing";
+            return (
+              <div class={cls}>
+                <h3>{section.title}</h3>
+                <ul>
+                  {section.rows?.map((row) => (
+                    <li set:html={`${row[0]}：<b>${row[1]}</b>`}></li>
+                  ))}
+                </ul>
+              </div>
+            );
+          }
+
+          // next
+          if (section.kind === "next") {
+            return (
+              <section class="cr-next ln-reveal">
+                <h2>{section.title}</h2>
+                <div class="cr-next-grid">
+                  {section.steps?.map((step) => (
+                    <div><span>{step.num}</span><b>{step.title}</b><p>{step.desc}</p></div>
+                  ))}
+                </div>
+                {section.foot && <p class="cr-foot">{section.foot}</p>}
+              </section>
+            );
+          }
+
+          return null;
+        })
+      }
+    </main>
+
+    <style>
+      .ln-report .ln-wrap { padding-top: 40px; }
+
+      /* 面包屑 */
+      .cr-crumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ln-muted, #6b7280);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .cr-crumbs a { color: var(--ln-accent, #1b6ef3); text-decoration: none; }
+      .cr-crumbs a:hover { text-decoration: underline; }
+      .cr-crumbs-current { color: var(--ln-text, #1f2937); font-weight: 600; }
+
+      /* Hero */
+      .cr-hero {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0d1b2a 0%, #1b3a5c 55%, #205375 100%);
+        padding: 48px 40px 40px;
+        margin-bottom: 40px;
+      }
+      .cr-hero .ln-kicker { color: #7dd3fc; letter-spacing: 0.12em; }
+      .cr-title { font-size: 40px; line-height: 1.2; color: #fff; margin: 14px 0 10px; font-weight: 800; }
+      .cr-sub { color: #b8c7d6; font-size: 14px; margin: 0 0 24px; }
+      .cr-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+      .cr-badges span {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.16);
+        color: #dbe7f2;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+      .cr-badges b { color: #7dd3fc; font-weight: 700; }
+
+      /* Metrics */
+      .cr-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .cr-metric {
+        background: var(--ln-card, #fff);
+        border: 1px solid var(--ln-border, #e6eaf0);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      .cr-metric b { display: block; font-size: 26px; color: var(--ln-accent, #1b6ef3); margin-bottom: 4px; }
+      .cr-metric span { font-size: 13px; color: var(--ln-muted, #6b7280); }
+      .cr-note { margin-top: 14px; font-size: 13px; color: var(--ln-muted, #6b7280); line-height: 1.7; }
+
+      /* Table */
+      .cr-table-wrap { overflow-x: auto; border: 1px solid var(--ln-border, #e6eaf0); border-radius: 14px; background: var(--ln-card, #fff); }
+      .cr-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+      .cr-table th { text-align: left; padding: 12px 14px; background: var(--ln-bg2, #f4f6fa); font-size: 12px; color: var(--ln-muted, #6b7280); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--ln-border, #e6eaf0); }
+      .cr-table td { padding: 11px 14px; border-bottom: 1px solid var(--ln-border, #e6eaf0); color: var(--ln-text, #1f2937); }
+      .cr-table tbody tr:last-child td { border-bottom: none; }
+      .cr-table tbody tr:hover { background: var(--ln-bg2, #f4f6fa); }
+      .cr-name { font-weight: 600; }
+      .cr-hl { font-weight: 700; color: #d97706; }
+
+      /* Insight */
+      .cr-insight {
+        margin-top: 14px;
+        background: var(--ln-bg2, #f4f6fa);
+        border-left: 3px solid var(--ln-accent, #1b6ef3);
+        border-radius: 0 12px 12px 0;
+        padding: 14px 16px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--ln-text, #1f2937);
+      }
+      .cr-insight ul { margin: 8px 0 0; padding-left: 20px; }
+      .cr-insight li { margin-bottom: 4px; }
+
+      /* Trend */
+      .cr-trend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .cr-trend-item { border: 1px solid var(--ln-border, #e6eaf0); border-radius: 14px; padding: 16px; background: var(--ln-card, #fff); }
+      .cr-trend-item b { display: block; font-size: 15px; margin-bottom: 4px; }
+      .cr-trend-item span { font-size: 20px; font-weight: 700; color: var(--ln-accent, #1b6ef3); }
+      .cr-trend-item em { display: block; font-style: normal; font-size: 12px; color: var(--ln-muted, #6b7280); margin-top: 6px; }
+      .cr-trend-peak span { color: #16a34a; }
+      .cr-trend-low span { color: #9ca3af; }
+
+      /* Buyer deep dive */
+      .cr-buyer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .cr-buyer {
+        border: 1px solid var(--ln-border, #e6eaf0);
+        border-radius: 14px;
+        padding: 18px;
+        background: var(--ln-card, #fff);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cr-buyer > b { font-size: 15px; line-height: 1.4; }
+      .cr-tag { display: inline-block; align-self: flex-start; background: rgba(27,110,243,0.1); color: var(--ln-accent, #1b6ef3); font-size: 12px; padding: 3px 10px; border-radius: 999px; }
+      .cr-buyer ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--ln-muted, #6b7280); }
+      .cr-judge { font-size: 13px; line-height: 1.6; color: var(--ln-text, #1f2937); background: var(--ln-bg2, #f4f6fa); border-radius: 10px; padding: 10px; margin: 0; }
+
+      /* Layers */
+      .cr-layer { border: 1px solid var(--ln-border, #e6eaf0); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; background: var(--ln-card, #fff); }
+      .cr-layer h3 { display: flex; align-items: center; gap: 10px; font-size: 15px; margin: 0 0 6px; }
+      .cr-layer p { margin: 0; font-size: 14px; line-height: 1.8; color: var(--ln-muted, #6b7280); }
+      .cr-layer-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #fff; }
+      .cr-a { background: #16a34a; }
+      .cr-b { background: #d97706; }
+      .cr-c { background: #6b7280; }
+
+      .cr-compliance, .cr-timing { margin-top: 20px; }
+      .cr-compliance h3, .cr-timing h3 { font-size: 15px; margin-bottom: 8px; }
+      .cr-compliance ul, .cr-timing ul { margin: 0; padding-left: 20px; font-size: 14px; line-height: 2; }
+
+      /* Next */
+      .cr-next {
+        margin-top: 40px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #0d1b2a 0%, #1b3a5c 100%);
+        padding: 36px;
+        color: #fff;
+      }
+      .cr-next h2 { font-size: 24px; margin: 0 0 20px; }
+      .cr-next-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .cr-next-grid > div { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; padding: 16px; }
+      .cr-next-grid span { font-size: 12px; color: #7dd3fc; font-weight: 700; }
+      .cr-next-grid b { display: block; font-size: 15px; margin: 6px 0; }
+      .cr-next-grid p { margin: 0; font-size: 13px; line-height: 1.7; color: #c6d5e3; }
+      .cr-foot { margin: 20px 0 0; font-size: 12px; color: #8fa3b5; }
+
+      @media (max-width: 900px) {
+        .cr-metrics, .cr-trend, .cr-buyer-grid, .cr-next-grid { grid-template-columns: 1fr; }
+        .cr-hero { padding: 32px 24px; }
+        .cr-title { font-size: 30px; }
+      }
+    </style>
+  </body>
+</html>
