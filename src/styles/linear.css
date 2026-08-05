@@ -606,7 +606,9 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 
   flex-direction: column;
 
-  gap: 12px;
+  gap: 20px;
+
+  justify-content: center;
 
 }
 
@@ -614,15 +616,17 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 
 /* æç´¢æ¡?*/
 
-.ln-search.ln-search-v3{flex-shrink:0;width:150px;max-width:150px;min-width:150px;position:relative;display:flex;align-items:center;}
+.ln-search.ln-search-v3{flex-shrink:1;flex:0 1 auto;width:100%;min-width:0;max-width:360px;position:relative;display:flex;align-items:center;}
+@media (max-width:1100px){.ln-search.ln-search-v3{flex:0 1 auto;width:100%;max-width:360px;}}
+@media (max-width:640px){.ln-search.ln-search-v3{flex:1 1 auto;width:100%;max-width:100%;}}
 
 .ln-search.ln-search-v3 .ln-input {
 
-  width: 150px;
+  width: 100%;
 
-  height: 28px;
+  height: 32px;
 
-  padding: 0 12px 0 30px;
+  padding: 0 12px 0 32px;
 
   border-radius: 8px;
 
@@ -656,19 +660,29 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
 
   position: absolute;
 
-  left: 12px;
+  left: 10px;
 
   top: 50%;
 
   transform: translateY(-50%);
 
-  font-size: 14px;
+  width: 14px;
+
+  height: 14px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
 
   color: var(--muted);
 
   pointer-events: none;
 
 }
+
+.ln-search.ln-search-v3 .ln-ico svg { display: block; width: 14px; height: 14px; }
 
 .ln-search.ln-search-v3 .ln-clear {
 
@@ -857,6 +871,40 @@ html:not(.dark) .ln-top { background: rgba(246,247,251,.78); }
   flex-shrink: 0;
 
 }
+
+/* ---------- Hero 快速入口 ---------- */
+.ln-hero-v3-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.ln-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: border-color .15s, background .15s, color .15s;
+  white-space: nowrap;
+}
+.ln-chip:hover {
+  color: var(--text);
+  border-color: var(--line2);
+  background: var(--panel2);
+}
+.ln-chip svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
 
 
 
